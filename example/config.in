@@ -1,0 +1,16 @@
+
+ClusterName: Cluster-alucloud38
+FunctionsDir: propies
+FunctionsFile: funcionsPropies.py
+Region: us-east-1
+BucketIn: buckedeprova
+BucketOut: alucloud-lambda-out
+RoleARN: arn:aws:iam::974349055189:role/role-lambda-s3-mapreduce
+MapperNodes: 10
+#Block size is expressed in KB
+MinBlockSize: 1
+KMSKeyARN: arn:aws:kms:us-east-1:974349055189:key/5fc43618-9206-4ba1-a6c5-8f2a17db8d26
+#Memory of each lambda function expressed in MB
+Memory: 128
+#TimeOut expressed in seconds
+TimeOut: 60
