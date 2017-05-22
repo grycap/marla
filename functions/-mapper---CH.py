@@ -34,7 +34,8 @@ def handler(event, context):
          
     ############################
 
-    # Pairs = list(map(lambda (name, value): (str(name), str(value)), Pairs))
+    # I'm not sure if this is necessary ...
+    Pairs = list(map(lambda (name, value): (str(name), str(value)), Pairs))
     #Sort Pairs for name
     Pairs = sorted(Pairs)
 
