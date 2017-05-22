@@ -1,10 +1,10 @@
 
-ClusterName: Cluster-alucloud38
-FunctionsDir: propies
-FunctionsFile: funcionsPropies.py
+ClusterName: mr-cluster-00
+FunctionsDir: example
+FunctionsFile: example_functions.py
 Region: us-east-1
-BucketIn: buckedeprova
-BucketOut: alucloud-lambda-out
+BucketIn: marla-bucket-in
+BucketOut: marla-bucket-out
 RoleARN: arn:aws:iam::974349055189:role/role-lambda-s3-mapreduce
 MapperNodes: 10
 #Block size is expressed in KB

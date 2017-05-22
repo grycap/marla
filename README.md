@@ -7,8 +7,8 @@ MARLA is a tool to create and configure a serverless MapReduce processor on AWS 
 MARLA requires:
 
 * An AWS account
-* AWS CLI, used to create the Lambda functions and S3 buckets
-* A "role" on AWS with permisions to create, delete and list keys on the used S3 buckets and permissions to invoke Lambda functions.
+* AWS CLI (version 1.11.76+), used to create the Lambda functions and S3 buckets
+* An IAM Role on AWS with permisions to create, delete and list keys on the used S3 buckets and permissions to invoke Lambda functions. See an example of such an IAM role in the [examples/iam-role.json](examples/iam-role.json) file.
 
 The code of the Lambda functions and user-defined Mapper and Reduce functions is written in Python. 
 
@@ -75,9 +75,9 @@ The reducer function must adhere to the following signature:
  
 ## Creating and Processing the Data
  
- Once fulfilled the previous steps, issue:
- 
- `$ marla_create.sh config.in`
+ Once fulfilled the previous steps, assumming that you modified the `config.in` file in the `example` directory, issue:
+
+ `$ sh marla_create.sh example/config.in`
  
  where `config.in` is the path to the configuration file. 
  
@@ -91,6 +91,6 @@ where `NameFile` is the name of the uploaded input file without the extension (f
 
 To remove a "Lambda cluster", use the script "marla_remove.sh" with the name of "cluster"
 
-`$ marla_remove.sh ClusterName`
+`$ sh marla_remove.sh ClusterName`
 
 This will remove all the created Lambda functions, but not the files in S3.
