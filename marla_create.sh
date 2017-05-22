@@ -373,7 +373,7 @@ fi
 
 #Extract coordinator function arn
 rm stderr &> /dev/null
-if coordinatorARN=`aws lambda get-function --function-name "HC-"$CLUSTERNAME"-lambda-coordinator" | grep -o 'arn:aws:lambda:\S*'` &> stderr
+if coordinatorARN=`aws lambda get-function --function-name "HC-"$CLUSTERNAME"-lambda-coordinator" | grep -o 'arn:aws:lambda:\S*' | sed -e 's/",//g'` &> stderr
 then
     echo -e "\e[32mARN of coordinator function obtained\e[39m"
 else

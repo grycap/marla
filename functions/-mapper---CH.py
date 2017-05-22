@@ -21,30 +21,22 @@ def handler(event, context):
 
     print("donwloaded " + bucket + "/" + key)
     chunk = obj['Body'].read().decode('utf-8')
-    del obj
 
     #declare variables to store
     #mapping results.
-    Names = []
-    Values = []
-    nPairs = 0
+    Pairs = []
     
          ##################
     ####### USER MAPPING #######
          ##################
 
-    user_functions.mapper(chunk, Names, Values)
+    user_functions.mapper(chunk, Pairs)
          
     ############################
 
-    del chunk
-    nPairs = len(Names)
-    Names = list(map(str, Names))
-    Values = list(map(str, Values))
+    # Pairs = list(map(lambda (name, value): (str(name), str(value)), Pairs))
     #Sort Pairs for name
-    Pairs = sorted(zip(Names,Values))
-    del Names
-    del Values
+    Pairs = sorted(Pairs)
 
          #################
     ####### USER REDUCE #######
@@ -52,15 +44,13 @@ def handler(event, context):
          
     Results = []
     user_functions.reducer(Pairs, Results)
-    del Pairs
     
     ###########################
     
     #upload results
     results = ""
-    nResults = len(Results)
-    for i in range(0, nResults):
-        results = results + str(Results[i][0]) + "," + str(Results[i][1]) + "\n"
+    for name, value in Results:
+        results += "{0},{1}\n".format(name, value)
 
     resultsKey = str(key) + "_mapped"
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
