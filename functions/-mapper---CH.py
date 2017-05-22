@@ -35,6 +35,7 @@ def handler(event, context):
     ############################
 
     # I'm not sure if this is necessary ...
+    # Convert to string
     Pairs = list(map(lambda pair:(str(pair[0]),str(pair[1])), Pairs))
     #Sort Pairs for name
     Pairs = sorted(Pairs)
