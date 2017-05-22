@@ -376,6 +376,7 @@ rm stderr &> /dev/null
 if coordinatorARN=`aws lambda get-function --function-name "HC-"$CLUSTERNAME"-lambda-coordinator" | grep -o 'arn:aws:lambda:\S*'` &> stderr
 then
     echo -e "\e[32mARN of coordinator function obtained\e[39m"
+    coordinatorARN=`echo "${coordinatorARN:0:-2}"`
 else
     echo -e "\e[31mError obtaining ARN of coordinator function\e[39m"
     more stderr
