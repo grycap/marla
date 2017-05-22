@@ -65,7 +65,7 @@ def handler(event, context):
         key = PREFIX + "/" + FileName + "/" + str(i) + "_mapped"
         obj = s3_client.get_object(Bucket=bucket, Key=key)
 
-        print("donwloaded " + bucket + "/" + key)
+        print("donwloaded {0}/{1}".format(bucket, key))
         
         chunk = obj['Body'].read().decode('utf-8')
         
@@ -74,8 +74,7 @@ def handler(event, context):
         for line in chunk.split('\n'):
             data = line.strip().split(",")
             if len(data) == 2:
-                auxName,auxValue = data
-                auxPairs.append([auxName,auxValue])
+                auxPairs.append(data)
 
         #Merge with previous pairs and sort
         auxPairs += Pairs
@@ -98,9 +97,8 @@ def handler(event, context):
     for name, value in Pairs:
         results += "{0},{1}\n".format(name, value)
 
-    resultsKey = PREFIX + "/" + FileName + "/" + "results"
+    resultsKey = os.path.join(PREFIX,FileName,"results")
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
-
     
     #remove all partitions
     for i in range (0, int(TotalNodes)):

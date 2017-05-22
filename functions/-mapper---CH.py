@@ -19,7 +19,7 @@ def handler(event, context):
     s3_client = boto3.client('s3')
     obj = s3_client.get_object(Bucket=bucket, Key=key)
 
-    print("donwloaded " + bucket + "/" + key)
+    print("donwloaded {0}/{1}".format(bucket, key))
     chunk = obj['Body'].read().decode('utf-8')
 
     #declare variables to store
@@ -35,7 +35,7 @@ def handler(event, context):
     ############################
 
     # I'm not sure if this is necessary ...
-    Pairs = list(map(lambda (name, value): (str(name), str(value)), Pairs))
+    Pairs = list(map(lambda pair:(str(pair[0]),str(pair[1])), Pairs))
     #Sort Pairs for name
     Pairs = sorted(Pairs)
 
