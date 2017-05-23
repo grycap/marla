@@ -21,6 +21,7 @@ def handler(event, context):
 
     print("donwloaded {0}/{1}".format(bucket, key))
     chunk = obj['Body'].read().decode('utf-8')
+    del obj
 
     #declare variables to store
     #mapping results.
@@ -34,6 +35,7 @@ def handler(event, context):
          
     ############################
 
+    del chunk
     # I'm not sure if this is necessary ...
     # Convert to string
     Pairs = list(map(lambda pair:(str(pair[0]),str(pair[1])), Pairs))
@@ -46,6 +48,7 @@ def handler(event, context):
          
     Results = []
     user_functions.reducer(Pairs, Results)
+    del Pairs
     
     ###########################
     

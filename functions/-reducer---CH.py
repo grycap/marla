@@ -68,6 +68,7 @@ def handler(event, context):
         print("donwloaded {0}/{1}".format(bucket, key))
         
         chunk = obj['Body'].read().decode('utf-8')
+        del obj
         
         #extract Names and values
         auxPairs = []
@@ -75,6 +76,10 @@ def handler(event, context):
             data = line.strip().split(",")
             if len(data) == 2:
                 auxPairs.append(data)
+            else:
+                print("Incorrect formatted line ignoring: {0}".format(line))
+
+        del chunk
 
         #Merge with previous pairs and sort
         auxPairs += Pairs
@@ -85,12 +90,14 @@ def handler(event, context):
          
         Results = []
         user_functions.reducer(auxPairs, Results)
+        del auxPairs
         
         ###########################
 
         #Save new results for the next iteration        
         for name, value in Results:
             Pairs.append([str(name), str(value)])
+        del Results
 
     #upload results
     results = ""
