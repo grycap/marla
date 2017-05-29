@@ -114,7 +114,6 @@ def handler(event, context):
 
         del chunk
 
-        del chunk
         #Merge with previous pairs and sort
         auxPairs += Pairs
         auxPairs.sort()
