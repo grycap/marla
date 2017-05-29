@@ -1,3 +1,18 @@
+# MARLA - MApReduce on AWS Lambda
+# Copyright (C) GRyCAP - I3M - UPV 
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License. 
+
 import boto3
 import os
 import time
@@ -12,6 +27,7 @@ def handler(event, context):
     #load environment variables
     BUCKETOUT = str(os.environ['BUCKETOUT'])
     PREFIX = str(os.environ['PREFIX'])
+    MEMORY = int(os.environ['MEMORY'])*1048576
 
     #take the file names from the mapped folder
     prefixFiles= PREFIX + '/' + FileName
@@ -58,18 +74,35 @@ def handler(event, context):
     
     #create lists to store results
     Pairs = []
-    #iterate for all mapped partitions
-    for i in range (0, int(TotalNodes)):
-        #donwload partition file
-        bucket = BUCKETOUT
-        key = PREFIX + "/" + FileName + "/" + str(i) + "_mapped"
-        obj = s3_client.get_object(Bucket=bucket, Key=key)
+    #iterate for all mapped partitions    
+    maxUsedMemory = MEMORY*0.45
+    while (i < int(TotalNodes)):
+        chunk = ""
+        usedMemory = 0
+        init = i
+        for j in range (init, int(TotalNodes)):
+            #donwload partition file
+            bucket = BUCKETOUT
+            key = PREFIX + "/" + FileName + "/" + str(j) + "_mapped"
+            
+            #extract file size
+            response = s3_client.head_object(Bucket=bucket, Key=key)
+            fileSize = response['ContentLength']
+            del response
+            #check the used memory
+            usedMemory = int(usedMemory) + int(fileSize)
+            if int(usedMemory) > int(maxUsedMemory):
+                break
+            
+            obj = s3_client.get_object(Bucket=bucket, Key=key)
+            
+            print("donwloaded " + bucket + "/" + key)
+        
+            chunk = chunk + str(obj['Body'].read().decode('utf-8'))
+            del obj
+            i +=1
 
-        print("donwloaded {0}/{1}".format(bucket, key))
-        
-        chunk = obj['Body'].read().decode('utf-8')
-        del obj
-        
+            
         #extract Names and values
         auxPairs = []
         for line in chunk.split('\n'):
@@ -81,6 +114,7 @@ def handler(event, context):
 
         del chunk
 
+        del chunk
         #Merge with previous pairs and sort
         auxPairs += Pairs
         auxPairs.sort()
