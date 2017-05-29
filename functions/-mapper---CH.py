@@ -34,48 +34,43 @@ def handler(event, context):
     s3_client = boto3.client('s3')
     obj = s3_client.get_object(Bucket=bucket, Key=key)
 
-    print("donwloaded " + bucket + "/" + key)
+    print("donwloaded {0}/{1}".format(bucket, key))
     chunk = obj['Body'].read().decode('utf-8')
     del obj
 
     #declare variables to store
     #mapping results.
-    Names = []
-    Values = []
-    nPairs = 0
-    
+    Pairs = []
+
          ##################
     ####### USER MAPPING #######
          ##################
 
-    user_functions.mapper(chunk, Names, Values)
-         
+    user_functions.mapper(chunk, Pairs)
+
     ############################
 
     del chunk
-    nPairs = len(Names)
-    Names = list(map(str, Names))
-    Values = list(map(str, Values))
+    # I'm not sure if this is necessary ...
+    # Convert to string
+    Pairs = list(map(lambda pair:(str(pair[0]),str(pair[1])), Pairs))
     #Sort Pairs for name
-    Pairs = sorted(zip(Names,Values))
-    del Names
-    del Values
+    Pairs = sorted(Pairs)
 
          #################
     ####### USER REDUCE #######
          #################
-         
+
     Results = []
     user_functions.reducer(Pairs, Results)
     del Pairs
-    
+
     ###########################
-    
+
     #upload results
     results = ""
-    nResults = len(Results)
-    for i in range(0, nResults):
-        results = results + str(Results[i][0]) + "," + str(Results[i][1]) + "\n"
+    for name, value in Results:
+        results += "{0},{1}\n".format(name, value)
 
     resultsKey = str(key) + "_mapped"
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)

@@ -53,12 +53,7 @@ def handler(event, context):
             return
 
         #Extract file name
-        pointPos = key.find('.')
-        if int(pointPos) < 0:
-            pointPos = len(key)
-
-        slashPos = key.rfind('/')+1            
-        filename = key[slashPos:pointPos]
+        filename = os.path.splitext(os.path.basename(key))[0]
         
         #check file size
         lambda_client = boto3.client('lambda')

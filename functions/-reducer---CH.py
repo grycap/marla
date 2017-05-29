@@ -77,7 +77,6 @@ def handler(event, context):
     #iterate for all mapped partitions    
     maxUsedMemory = MEMORY*0.45
     while (i < int(TotalNodes)):
-
         chunk = ""
         usedMemory = 0
         init = i
@@ -109,8 +108,11 @@ def handler(event, context):
         for line in chunk.split('\n'):
             data = line.strip().split(",")
             if len(data) == 2:
-                auxName,auxValue = data
-                auxPairs.append([auxName,auxValue])
+                auxPairs.append(data)
+            else:
+                print("Incorrect formatted line ignoring: {0}".format(line))
+
+        del chunk
 
         del chunk
         #Merge with previous pairs and sort
@@ -122,26 +124,22 @@ def handler(event, context):
          
         Results = []
         user_functions.reducer(auxPairs, Results)
+        del auxPairs
         
         ###########################
 
-        #Save new results for the next iteration
-        nResults = len(Results)
-        del Pairs
-        Pairs = list(Results)
+        #Save new results for the next iteration        
+        for name, value in Results:
+            Pairs.append([str(name), str(value)])
         del Results
-        for n in range(0,nResults):
-            Pairs[n][0] = str(Pairs[n][0])
-            Pairs[n][1] = str(Pairs[n][1])
-        
+
     #upload results
     results = ""
-    for i in range(0, len(Pairs)):
-        results = results + str(Pairs[i][0]) + "," + str(Pairs[i][1]) + "\n"
+    for name, value in Pairs:
+        results += "{0},{1}\n".format(name, value)
 
-    resultsKey = PREFIX + "/" + FileName + "/" + "results"
+    resultsKey = os.path.join(PREFIX,FileName,"results")
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
-
     
     #remove all partitions
     for i in range (0, int(TotalNodes)):
