@@ -26,13 +26,13 @@ def handler(event, context):
     #declare variables to store
     #mapping results.
     Pairs = []
-    
+
          ##################
     ####### USER MAPPING #######
          ##################
 
     user_functions.mapper(chunk, Pairs)
-         
+
     ############################
 
     del chunk
@@ -45,13 +45,13 @@ def handler(event, context):
          #################
     ####### USER REDUCE #######
          #################
-         
+
     Results = []
     user_functions.reducer(Pairs, Results)
     del Pairs
-    
+
     ###########################
-    
+
     #upload results
     results = ""
     for name, value in Results:
