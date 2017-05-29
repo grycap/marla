@@ -197,17 +197,31 @@ then
     echo -e "Please, change this filename\e[39m"
 fi
 
-#rm content of reducer and mapper folders
-rm -r functions/mapper/ &> /dev/null
-rm -r functions/reducer/ &> /dev/null
+#Create a directory in $HOME/.marla/ to store created files
 
-mkdir functions/mapper &> /dev/null
-mkdir functions/reducer &> /dev/null
+if [ ! -d $HOME/.marla/ ]; then
+    echo -e "Creating $HOME/.marla directory."
+    mkdir $HOME/.marla
+fi
+
+rm -r $HOME/.marla/$CLUSTERNAME/ &> /dev/null
+
+mkdir $HOME/.marla/$CLUSTERNAME &> /dev/null
+
+#Check existence of directory
+if [ ! -d $HOME/.marla/$CLUSTERNAME/ ]; then
+    echo -e "\e[31mError: can't create '$HOME/.marla/$CLUSTERNAME/' directory."
+    exit 1
+fi
+
+mkdir $HOME/.marla/$CLUSTERNAME/functions &> /dev/null
+mkdir $HOME/.marla/$CLUSTERNAME/functions/mapper &> /dev/null
+mkdir $HOME/.marla/$CLUSTERNAME/functions/reducer &> /dev/null
 
 ##Mapper##
 
 #copy user functions to mapper directory
-if cp $FUNCTIONSDIR/* functions/mapper/
+if cp $FUNCTIONSDIR/* $HOME/.marla/$CLUSTERNAME/functions/mapper/
 then
     echo -e "\e[32mUser functions copied to mapper package\e[39m"
 else
@@ -216,7 +230,7 @@ else
 fi
 
 #change user functions filename
-if mv functions/mapper/$FUNCTIONSFILE functions/mapper/user_functions.py
+if mv $HOME/.marla/$CLUSTERNAME/functions/mapper/$FUNCTIONSFILE $HOME/.marla/$CLUSTERNAME/functions/mapper/user_functions.py
 then
     echo -e "\e[32mUser functions filename changed\e[39m"
 else
@@ -225,7 +239,7 @@ else
 fi
 
 #copy mapper cluster function to mapper directory
-if cp functions/-mapper---CH.py functions/mapper/-mapper---CH.py
+if cp functions/-mapper---CH.py $HOME/.marla/$CLUSTERNAME/functions/mapper/-mapper---CH.py
 then
     echo -e "\e[32mCluster mapper function copied to mapper package\e[39m"
 else
@@ -236,7 +250,7 @@ fi
 ##Reducer##
 
 #copy user functions to reducer directory
-if cp $FUNCTIONSDIR/* functions/reducer/
+if cp $FUNCTIONSDIR/* $HOME/.marla/$CLUSTERNAME/functions/reducer/
 then
     echo -e "\e[32mUser functions copied to reducer package\e[39m"
 else
@@ -245,7 +259,7 @@ else
 fi
 
 #change user functions filename
-if mv functions/reducer/$FUNCTIONSFILE functions/reducer/user_functions.py
+if mv $HOME/.marla/$CLUSTERNAME/functions/reducer/$FUNCTIONSFILE $HOME/.marla/$CLUSTERNAME/functions/reducer/user_functions.py
 then
     echo -e "\e[32mUser functions filename changed\e[39m"
 else
@@ -254,7 +268,7 @@ else
 fi
 
 #copy reducer cluster function to reducer directory
-if cp functions/-reducer---CH.py functions/reducer/-reducer---CH.py
+if cp functions/-reducer---CH.py $HOME/.marla/$CLUSTERNAME/functions/reducer/-reducer---CH.py
 then
     echo -e "\e[32mCluster reducer function copied to reducer package\e[39m"
 else
@@ -265,7 +279,7 @@ fi
 #####Create packages#####
 
 #zip the coordinator code
-if zip -j9 coordinator.zip functions/coordinator.py &> /dev/null
+if zip -j9 $HOME/.marla/$CLUSTERNAME/coordinator.zip functions/coordinator.py &> /dev/null
 then
     echo -e "\e[32mCoordinator package created\e[39m"
 else
@@ -274,7 +288,7 @@ else
 fi
 
 #zip the mapper code
-if zip -j9 mapper.zip functions/mapper/* &> /dev/null
+if zip -j9 $HOME/.marla/$CLUSTERNAME/mapper.zip $HOME/.marla/$CLUSTERNAME/functions/mapper/* &> /dev/null
 then
     echo -e "\e[32mMapper package created\e[39m"
 else
@@ -283,7 +297,7 @@ else
 fi
 
 #zip the reducer code
-if zip -j9 reducer.zip functions/reducer/* &> /dev/null
+if zip -j9 $HOME/.marla/$CLUSTERNAME/reducer.zip $HOME/.marla/$CLUSTERNAME/functions/reducer/* &> /dev/null
 then
     echo -e "\e[32mReducer package created\e[39m"
 else
@@ -297,33 +311,32 @@ echo "-------------------------"
 echo "----Uploading packages...----"
 
 #Upload code for cluster functions to the cluster bucket
-rm stderr &> /dev/null
-if aws s3 cp mapper.zip s3://$BUCKETIN/$CLUSTERNAME/mapper.zip &> stderr
+if aws s3 cp $HOME/.marla/$CLUSTERNAME/mapper.zip s3://$BUCKETIN/$CLUSTERNAME/mapper.zip &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mMapper code upload to $BUCKETIN/$CLUSTERNAME\e[39m"
 else
     echo -e "\e[31mError uploading mapper code to $BUCKETIN/$CLUSTERNAME\e[39m"
-    more stderr    
+    more $HOME/.marla/$CLUSTERNAME/stderr    
     exit 1
 fi
 
-rm stderr &> /dev/null
-if aws s3 cp reducer.zip s3://$BUCKETIN/$CLUSTERNAME/reducer.zip &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if aws s3 cp $HOME/.marla/$CLUSTERNAME/reducer.zip s3://$BUCKETIN/$CLUSTERNAME/reducer.zip &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mReducer code upload to $BUCKETIN/$CLUSTERNAME\e[39m"
 else
     echo -e "\e[31mError uploading reducer code to $BUCKETIN/$CLUSTERNAME\e[39m"
-    more stderr    
+    more $HOME/.marla/$CLUSTERNAME/stderr    
     exit 1
 fi
 
-rm stderr &> /dev/null
-if aws s3 cp coordinator.zip s3://$BUCKETIN/$CLUSTERNAME/coordinator.zip &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if aws s3 cp $HOME/.marla/$CLUSTERNAME/coordinator.zip s3://$BUCKETIN/$CLUSTERNAME/coordinator.zip &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mCoordinator code upload to $BUCKETIN/$CLUSTERNAME\e[39m"
 else
     echo -e "\e[31mError uploading coordinator code to $BUCKETIN/$CLUSTERNAME\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
@@ -336,42 +349,41 @@ echo "###############################"
 echo "----Creating coordinator function...----"
 
 #Generate cli json for coordinator function
-rm coordinator.json &> /dev/null
-echo '{' >> coordinator.json
-echo '   "FunctionName": "HC-'$CLUSTERNAME'-lambda-coordinator",' >> coordinator.json
-echo '   "Runtime": "python3.6",' >> coordinator.json
-echo '   "Role": "'$ROLE'",' >> coordinator.json
-echo '   "Handler": "coordinator.handler",' >> coordinator.json
-echo '   "Code": {' >> coordinator.json
-echo '      "S3Bucket": "'$BUCKETIN'",' >> coordinator.json
-echo '      "S3Key": "'$CLUSTERNAME'/coordinator.zip"' >> coordinator.json
-#echo '      "S3ObjectVersion": "0.1"' >> coordinator.json
-echo '   },' >> coordinator.json
-echo '   "Timeout": '$TIMEOUT',' >> coordinator.json
-echo '   "MemorySize": '$MEMORY',' >> coordinator.json
-#echo '   "Publish": true,' >> coordinator.json
-echo '   "Environment": {' >> coordinator.json
-echo '       "Variables": {' >> coordinator.json
-echo '           "BUCKET": "'$BUCKETIN'",' >> coordinator.json
-echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> coordinator.json
-echo '           "PREFIX": "'$CLUSTERNAME'",' >> coordinator.json
-echo '           "MAPPERNUMBER": "'$MAXMAPPERNODES'",' >> coordinator.json
-echo '           "MINBLOCKSIZE": "'$MINBLOCKSIZE'",' >> coordinator.json
-echo '           "MEMORY": "'$MEMORY'"' >> coordinator.json
-echo '       }' >> coordinator.json
-echo '   },' >> coordinator.json
-echo '   "KMSKeyArn": "'$KMSKEYARN'"' >> coordinator.json
-echo '}' >> coordinator.json
+echo '{' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   "FunctionName": "HC-'$CLUSTERNAME'-lambda-coordinator",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   "Runtime": "python3.6",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   "Role": "'$ROLE'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   "Handler": "coordinator.handler",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   "Code": {' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '      "S3Bucket": "'$BUCKETIN'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '      "S3Key": "'$CLUSTERNAME'/coordinator.zip"' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+#echo '      "S3ObjectVersion": "0.1"' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   },' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   "Timeout": '$TIMEOUT',' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   "MemorySize": '$MEMORY',' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+#echo '   "Publish": true,' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   "Environment": {' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '       "Variables": {' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '           "BUCKET": "'$BUCKETIN'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '           "PREFIX": "'$CLUSTERNAME'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '           "MAPPERNUMBER": "'$MAXMAPPERNODES'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '           "MINBLOCKSIZE": "'$MINBLOCKSIZE'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '           "MEMORY": "'$MEMORY'"' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '       }' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   },' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   "KMSKeyArn": "'$KMSKEYARN'"' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '}' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 
 
 #Create lambda coordinator function
-rm stderr &> /dev/null
-if aws lambda create-function --region $REGION --cli-input-json file://coordinator.json &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if aws lambda create-function --region $REGION --cli-input-json file://$HOME/.marla/$CLUSTERNAME/coordinator.json &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mLambda coordinator function created on AWS.\e[39m"
 else
     echo -e "\e[31mError creating lambda coordinator function.\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
@@ -381,59 +393,58 @@ echo "----Adding permissions for coordinator function...----"
 
 
 #Add permission to lambda coordinator function
-rm stderr &> /dev/null
-if aws lambda add-permission --function-name "HC-"$CLUSTERNAME"-lambda-coordinator" --statement-id "HC-"$CLUSTERNAME"-coordinator-stateID" --action "lambda:InvokeFunction" --principal s3.amazonaws.com --source-arn "arn:aws:s3:::"$BUCKETIN &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if aws lambda add-permission --function-name "HC-"$CLUSTERNAME"-lambda-coordinator" --statement-id "HC-"$CLUSTERNAME"-coordinator-stateID" --action "lambda:InvokeFunction" --principal s3.amazonaws.com --source-arn "arn:aws:s3:::"$BUCKETIN &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mPermission to S3 added for coordinator function\e[39m"
 else
     echo -e "\e[31mError adding permission to S3 for coordinator function\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
 #Extract coordinator function arn
-rm stderr &> /dev/null
-if coordinatorARN=`aws lambda get-function --function-name "HC-"$CLUSTERNAME"-lambda-coordinator" | grep -o 'arn:aws:lambda:\S*' | sed -e 's/",//g'` &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if coordinatorARN=`aws lambda get-function --function-name "HC-"$CLUSTERNAME"-lambda-coordinator" | grep -o 'arn:aws:lambda:\S*' | sed -e 's/",//g'` &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mARN of coordinator function obtained\e[39m"
 else
     echo -e "\e[31mError obtaining ARN of coordinator function\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
 #Add a bucket notification configuration to "BUCKETIN"
 
-rm coordinator_notification.json &> /dev/null
-echo '{' >> coordinator_notification.json
-echo '	"LambdaFunctionConfigurations": [' >> coordinator_notification.json
-echo '  {' >> coordinator_notification.json
-echo '      "Id": "'$BUCKETIN'-'$CLUSTERNAME'-TRIGGERID",' >> coordinator_notification.json
-echo '      "LambdaFunctionArn": "'$coordinatorARN'",' >> coordinator_notification.json
-echo '      "Events": [' >> coordinator_notification.json
-echo '         "s3:ObjectCreated:*"' >> coordinator_notification.json
-echo '      ],' >> coordinator_notification.json
-echo '      "Filter": {' >> coordinator_notification.json
-echo '         "Key": {' >> coordinator_notification.json
-echo '             "FilterRules": [' >> coordinator_notification.json
-echo '                 {' >> coordinator_notification.json
-echo '                    "Name": "prefix",' >> coordinator_notification.json
-echo '                    "Value": "'$CLUSTERNAME'/"' >> coordinator_notification.json
-echo '                 }' >> coordinator_notification.json
-echo '             ]' >> coordinator_notification.json
-echo '         }' >> coordinator_notification.json
-echo '      }' >> coordinator_notification.json
-echo '  }' >> coordinator_notification.json
-echo ' ]' >> coordinator_notification.json
-echo '}' >> coordinator_notification.json
+echo '{' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '	"LambdaFunctionConfigurations": [' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '  {' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '      "Id": "'$BUCKETIN'-'$CLUSTERNAME'-TRIGGERID",' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '      "LambdaFunctionArn": "'$coordinatorARN'",' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '      "Events": [' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '         "s3:ObjectCreated:*"' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '      ],' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '      "Filter": {' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '         "Key": {' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '             "FilterRules": [' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '                 {' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '                    "Name": "prefix",' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '                    "Value": "'$CLUSTERNAME'/"' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '                 }' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '             ]' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '         }' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '      }' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '  }' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo ' ]' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
+echo '}' >> $HOME/.marla/$CLUSTERNAME/coordinator_notification.json
 
-rm stderr &> /dev/null
-if aws s3api put-bucket-notification-configuration --bucket $BUCKETIN --notification-configuration file://coordinator_notification.json &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if aws s3api put-bucket-notification-configuration --bucket $BUCKETIN --notification-configuration file://$HOME/.marla/$CLUSTERNAME/coordinator_notification.json &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mBucket notification configuration added\e[39m"
 else
     echo -e "\e[31mError adding bucket notification configuration\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
@@ -446,38 +457,37 @@ echo "###############################"
 echo "----Creating mapper function...----"
 
 #Generate cli json for mapper function
-rm mapper.json &> /dev/null
-echo '{' >> mapper.json
-echo '   "FunctionName": "HC-'$CLUSTERNAME'-lambda-mapper",' >> mapper.json
-echo '   "Runtime": "python3.6",' >> mapper.json
-echo '   "Role": "'$ROLE'",' >> mapper.json
-echo '   "Handler": "-mapper---CH.handler",' >> mapper.json
-echo '   "Code": {' >> mapper.json
-echo '      "S3Bucket": "'$BUCKETIN'",' >> mapper.json
-echo '      "S3Key": "'$CLUSTERNAME'/mapper.zip"' >> mapper.json
-#echo '      "S3ObjectVersion": "0.1"' >> mapper.json
-echo '   },' >> mapper.json
-echo '   "Timeout": '$TIMEOUT',' >> mapper.json
-echo '   "MemorySize": '$MEMORY',' >> mapper.json
-#echo '   "Publish": true,' >> mapper.json
-echo '   "Environment": {' >> mapper.json
-echo '       "Variables": {' >> mapper.json
-echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> mapper.json
-echo '           "PREFIX": "'$CLUSTERNAME'",' >> mapper.json
-echo '           "MEMORY": "'$MEMORY'"' >> mapper.json
-echo '       }' >> mapper.json
-echo '   },' >> mapper.json
-echo '   "KMSKeyArn": "'$KMSKEYARN'"' >> mapper.json
-echo '}' >> mapper.json
+echo '{' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "FunctionName": "HC-'$CLUSTERNAME'-lambda-mapper",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "Runtime": "python3.6",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "Role": "'$ROLE'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "Handler": "-mapper---CH.handler",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "Code": {' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '      "S3Bucket": "'$BUCKETIN'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '      "S3Key": "'$CLUSTERNAME'/mapper.zip"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+#echo '      "S3ObjectVersion": "0.1"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   },' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "Timeout": '$TIMEOUT',' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "MemorySize": '$MEMORY',' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+#echo '   "Publish": true,' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "Environment": {' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '       "Variables": {' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '           "PREFIX": "'$CLUSTERNAME'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '           "MEMORY": "'$MEMORY'"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '       }' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   },' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "KMSKeyArn": "'$KMSKEYARN'"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '}' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 
 #Create lambda mapper function
-rm stderr &> /dev/null
-if aws lambda create-function --region $REGION --cli-input-json file://mapper.json &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if aws lambda create-function --region $REGION --cli-input-json file://$HOME/.marla/$CLUSTERNAME/mapper.json &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mLambda mapper function created on AWS.\e[39m"
 else
     echo -e "\e[31mError creating lambda mapper function.\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
@@ -486,24 +496,24 @@ echo "-------------------------"
 echo "----Adding permissions for mapper function...----"
 
 #Add permission to lambda mapper function
-rm stderr &> /dev/null
-if aws lambda add-permission --function-name "HC-"$CLUSTERNAME"-lambda-mapper" --statement-id "HC-"$CLUSTERNAME"-mapper-stateID" --action "lambda:InvokeFunction" --principal lambda.amazonaws.com --source-arn $coordinatorARN &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if aws lambda add-permission --function-name "HC-"$CLUSTERNAME"-lambda-mapper" --statement-id "HC-"$CLUSTERNAME"-mapper-stateID" --action "lambda:InvokeFunction" --principal lambda.amazonaws.com --source-arn $coordinatorARN &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mPermission to coordination function added for mapper function\e[39m"
 else
     echo -e "\e[31mError adding permission to coordinator function for mapper function\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
 #Extract mapper function arn
-rm stderr &> /dev/null
-if mapperARN=`aws lambda get-function --function-name "HC-"$CLUSTERNAME"-lambda-mapper" | grep -o 'arn:aws:lambda:\S*'` &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if mapperARN=`aws lambda get-function --function-name "HC-"$CLUSTERNAME"-lambda-mapper" | grep -o 'arn:aws:lambda:\S*'` &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mARN of mapper function obtained\e[39m"
 else
     echo -e "\e[31mError obtaining ARN of mapper function\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
@@ -517,38 +527,37 @@ echo "################################"
 echo "----Creating reducer function...----"
 
 #Generate cli json for reducer function
-rm reducer.json &> /dev/null
-echo '{' >> reducer.json
-echo '   "FunctionName": "HC-'$CLUSTERNAME'-lambda-reducer",' >> reducer.json
-echo '   "Runtime": "python3.6",' >> reducer.json
-echo '   "Role": "'$ROLE'",' >> reducer.json
-echo '   "Handler": "-reducer---CH.handler",' >> reducer.json
-echo '   "Code": {' >> reducer.json
-echo '      "S3Bucket": "'$BUCKETIN'",' >> reducer.json
-echo '      "S3Key": "'$CLUSTERNAME'/reducer.zip"' >> reducer.json
+echo '{' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "FunctionName": "HC-'$CLUSTERNAME'-lambda-reducer",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "Runtime": "python3.6",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "Role": "'$ROLE'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "Handler": "-reducer---CH.handler",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "Code": {' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '      "S3Bucket": "'$BUCKETIN'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '      "S3Key": "'$CLUSTERNAME'/reducer.zip"' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 #echo '      "S3ObjectVersion": "0.1"' >> reducer.json
-echo '   },' >> reducer.json
-echo '   "Timeout": '$TIMEOUT',' >> reducer.json
-echo '   "MemorySize": '$MEMORY',' >> reducer.json
-#echo '   "Publish": true,' >> reducer.json
-echo '   "Environment": {' >> reducer.json
-echo '       "Variables": {' >> reducer.json
-echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> reducer.json
-echo '           "PREFIX": "'$CLUSTERNAME'",' >> reducer.json
-echo '           "MEMORY": "'$MEMORY'"' >> reducer.json
-echo '       }' >> reducer.json
-echo '   },' >> reducer.json
-echo '   "KMSKeyArn": "'$KMSKEYARN'"' >> reducer.json
-echo '}' >> reducer.json
+echo '   },' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "Timeout": '$TIMEOUT',' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "MemorySize": '$MEMORY',' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+#echo '   "Publish": true,' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "Environment": {' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '       "Variables": {' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '           "PREFIX": "'$CLUSTERNAME'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '           "MEMORY": "'$MEMORY'"' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '       }' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   },' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "KMSKeyArn": "'$KMSKEYARN'"' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '}' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 
 #Create lambda reducer function
-rm stderr &> /dev/null
-if aws lambda create-function --region $REGION --cli-input-json file://reducer.json &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if aws lambda create-function --region $REGION --cli-input-json file://$HOME/.marla/$CLUSTERNAME/reducer.json &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mLambda reducer function created on AWS.\e[39m"
 else
     echo -e "\e[31mError creating lambda reducer function.\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
@@ -557,37 +566,27 @@ echo "-------------------------"
 echo "----Adding permissions for reducer function...----"
 
 #Add permission to lambda mapper function to invoke reducer function
-rm stderr &> /dev/null
-if aws lambda add-permission --function-name "HC-"$CLUSTERNAME"-lambda-reducer" --statement-id "HC-"$CLUSTERNAME"-reducer-stateID" --action "lambda:InvokeFunction" --principal lambda.amazonaws.com --source-arn $mapperARN &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if aws lambda add-permission --function-name "HC-"$CLUSTERNAME"-lambda-reducer" --statement-id "HC-"$CLUSTERNAME"-reducer-stateID" --action "lambda:InvokeFunction" --principal lambda.amazonaws.com --source-arn $mapperARN &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mPermission to mapper function added for reducer function\e[39m"
 else
     echo -e "\e[31mError adding permission to mapper function for reducer function\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
 #Extract reducer function arn
-rm stderr &> /dev/null
-if reducerARN=`aws lambda get-function --function-name "HC-"$CLUSTERNAME"-lambda-reducer" | grep -o 'arn:aws:lambda:\S*'` &> stderr
+rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
+if reducerARN=`aws lambda get-function --function-name "HC-"$CLUSTERNAME"-lambda-reducer" | grep -o 'arn:aws:lambda:\S*'` &> $HOME/.marla/$CLUSTERNAME/stderr
 then
     echo -e "\e[32mARN of reducer function obtained\e[39m"
 else
     echo -e "\e[31mError obtaining ARN of reducer function\e[39m"
-    more stderr
+    more $HOME/.marla/$CLUSTERNAME/stderr
     exit 1
 fi
 
-#Add permission to lambda reducer function to invoke reducer function
-#rm stderr &> /dev/null
-#if aws lambda add-permission --function-name "HC-"$CLUSTERNAME"-lambda-reducer" --statement-id "HC-"$CLUSTERNAME"-reducer-stateID" --action "lambda:InvokeFunction" --principal lambda.amazonaws.com --source-arn $reducerARN &> stderr
-#then
-#    echo -e "\e[32mPermission to reducer function added for reducer function\e[39m"
-#else
-#    echo -e "\e[31mError adding permission to reducer function for reducer function\e[39m"
-#    more stderr
-#    exit 1
-#fi
 
 echo "-------------------------"
 
