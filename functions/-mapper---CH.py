@@ -21,23 +21,70 @@ import user_functions
 def handler(event, context):
     #extract filename and the partition number
     FileName = event["FileName"]
-    NodeNumber = event["NodeNumber"]
-    TotalNodes = event["TotalNodes"]
+    NodeNumber = int(event["NodeNumber"])
+    TotalNodes = int(event["TotalNodes"])
+    ChunkSize = int(event["ChunkSize"])
+    FileSize = int(event["FileSize"])
+    KeyIn = event["KeyIn"]
 
     #load environment variables
+    BUCKET = str(os.environ['BUCKET'])
     BUCKETOUT = str(os.environ['BUCKETOUT'])
     PREFIX = str(os.environ['PREFIX'])
 
-    #donwload partition file
-    bucket = BUCKETOUT
+    #download partition from data file
+    bucketIn = BUCKET
     key = PREFIX + "/" + FileName + "/" + str(NodeNumber)
     s3_client = boto3.client('s3')
-    obj = s3_client.get_object(Bucket=bucket, Key=key)
 
-    print("donwloaded {0}/{1}".format(bucket, key))
+    #calculate the partition range
+    initRange = NodeNumber*ChunkSize
+    limitRange = initRange + ChunkSize - 1
+    if NodeNumber == TotalNodes-1:
+        limitRange = FileSize
+    
+    chunkRange = 'bytes=' + str(initRange) + '-' + str(limitRange)
+    obj = s3_client.get_object(Bucket=bucketIn, Key=KeyIn, Range=chunkRange)
+
+    print("donwloaded partition {0} from {1}/{2}".format(NodeNumber ,bucketIn, KeyIn))
+    print("range {0}-{1}".format(initRange ,limitRange))
     chunk = obj['Body'].read().decode('utf-8')
     del obj
 
+    if NodeNumber > 0:
+        #delete first line until '\n' (inclusive)
+        chunk=chunk.split('\n', 1)[-1]
+    
+    if NodeNumber < TotalNodes-1:
+        #download next text until '\n'
+        #calculate the size of extra text
+        linelen = chunk.find('\n')
+        if linelen < 0:
+            print("\ n not found in mapper chunk")
+            return
+        extraRange = 2*(linelen+20)
+        initRange = limitRange + 1
+        limitRange = limitRange + extraRange
+        
+        while limitRange < FileSize:
+            chunkRange = 'bytes=' + str(initRange) + '-' + str(limitRange)
+            obj = s3_client.get_object(Bucket=bucketIn, Key=KeyIn, Range=chunkRange)
+
+            extraChunk = obj['Body'].read().decode('utf-8')
+            posEndLine = extraChunk.find('\n')
+            #check if end of line is found
+            if  posEndLine != -1:
+                #add extra text until '\n' and exit from loop
+                chunk = chunk + extraChunk[:posEndLine+1]
+                break
+            else:
+                #save downloaded text and continue with next iteration
+                chunk = chunk + extraChunk
+                initRange = limitRange
+                limitRange = limitRange + extraRange
+                
+
+        
     #declare variables to store
     #mapping results.
     Pairs = []
@@ -75,11 +122,8 @@ def handler(event, context):
     resultsKey = str(key) + "_mapped"
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
 
-    #remove partition
-    s3_client.delete_object(Bucket=BUCKETOUT, Key=key)
-
     #check if this is the last partition.
-    if int(NodeNumber) == int(TotalNodes)-1:
+    if NodeNumber == TotalNodes-1:
         #lunch lambda function reducer
         print("lunching reducer function")
         lambda_client = boto3.client('lambda')

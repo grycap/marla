@@ -472,6 +472,7 @@ echo '   "MemorySize": '$MEMORY',' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 #echo '   "Publish": true,' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '   "Environment": {' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '       "Variables": {' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '           "BUCKET": "'$BUCKETIN'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '           "PREFIX": "'$CLUSTERNAME'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '           "MEMORY": "'$MEMORY'"' >> $HOME/.marla/$CLUSTERNAME/mapper.json

@@ -8,7 +8,7 @@ MARLA requires:
 
 * An AWS account
 * AWS CLI (version 1.11.76+), used to create the Lambda functions and S3 buckets
-* An IAM Role on AWS with permisions to create, delete and list keys on the used S3 buckets and permissions to invoke Lambda functions. See an example of such an IAM role in the [examples/iam-role.json](examples/iam-role.json) file.
+* An IAM Role on AWS with permissions to create, delete and list keys on the used S3 buckets and permissions to invoke Lambda functions. See an example of such an IAM role in the [examples/iam-role.json](examples/iam-role.json) file.
 
 The code of the Lambda functions and user-defined Mapper and Reduce functions is written in Python. 
 

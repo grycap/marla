@@ -22,7 +22,7 @@ import user_functions
 def handler(event, context):
     #extract filename and the partition number
     FileName = event["FileName"]
-    TotalNodes = event["TotalNodes"]
+    TotalNodes = int(event["TotalNodes"])
 
     #load environment variables
     BUCKETOUT = str(os.environ['BUCKETOUT'])
@@ -42,7 +42,7 @@ def handler(event, context):
     #this function will check that 5 times
     allMapped = True
     for i in range(0, 5):
-        for j in range(0, int(TotalNodes)):
+        for j in range(0, TotalNodes):
             auxName = str(j) + "_mapped"
             if auxName in filesInBucket:
                 print(str(auxName) + " is mapped")
@@ -77,11 +77,11 @@ def handler(event, context):
     Pairs = []
     #iterate for all mapped partitions    
     maxUsedMemory = MEMORY*0.45
-    while (i < int(TotalNodes)):
+    while (i < TotalNodes):
         chunk = ""
         usedMemory = 0
         init = i
-        for j in range (init, int(TotalNodes)):
+        for j in range (init, TotalNodes):
             #donwload partition file
             bucket = BUCKETOUT
             key = PREFIX + "/" + FileName + "/" + str(j) + "_mapped"
@@ -128,7 +128,8 @@ def handler(event, context):
         
         ###########################
 
-        #Save new results for the next iteration        
+        #Save new results for the next iteration
+        Pairs = []
         for name, value in Results:
             Pairs.append([str(name), str(value)])
         del Results
@@ -142,7 +143,7 @@ def handler(event, context):
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
     
     #remove all partitions
-    for i in range (0, int(TotalNodes)):
+    for i in range (0, TotalNodes):
         bucket = BUCKETOUT
         key = PREFIX + "/" + FileName + "/" + str(i) + "_mapped"
         s3_client.delete_object(Bucket=BUCKETOUT, Key=key)
