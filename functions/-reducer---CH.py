@@ -22,7 +22,7 @@ import user_functions
 def handler(event, context):
     #extract filename and the partition number
     FileName = event["FileName"]
-    TotalNodes = event["TotalNodes"]
+    TotalNodes = int(event["TotalNodes"])
 
     #load environment variables
     BUCKETOUT = str(os.environ['BUCKETOUT'])
@@ -41,7 +41,7 @@ def handler(event, context):
     #this function will check that 5 times
     allMapped = True
     for i in range(0, 5):
-        for j in range(0, int(TotalNodes)):
+        for j in range(0, TotalNodes):
             auxName = str(j) + "_mapped"
             if auxName in filesInBucket:
                 print(str(auxName) + " is mapped")
@@ -57,6 +57,7 @@ def handler(event, context):
     #invoke another reduce function and termines
     if allMapped == False:
         #lunch lambda function reducer
+        lambda_client = boto3.client('lambda')
         payload = {}
         payload["FileName"]=str(FileName)
         payload["TotalNodes"]=str(TotalNodes)
@@ -74,7 +75,7 @@ def handler(event, context):
     #create lists to store results
     Pairs = []
     #iterate for all mapped partitions
-    for i in range (0, int(TotalNodes)):
+    for i in range (0, TotalNodes):
         #donwload partition file
         bucket = BUCKETOUT
         key = PREFIX + "/" + FileName + "/" + str(i) + "_mapped"
@@ -124,7 +125,7 @@ def handler(event, context):
 
     
     #remove all partitions
-    for i in range (0, int(TotalNodes)):
+    for i in range (0, TotalNodes):
         bucket = BUCKETOUT
         key = PREFIX + "/" + FileName + "/" + str(i) + "_mapped"
         s3_client.delete_object(Bucket=BUCKETOUT, Key=key)
