@@ -58,6 +58,7 @@ def handler(event, context):
     #invoke another reduce function and termines
     if allMapped == False:
         #lunch lambda function reducer
+        lambda_client = boto3.client('lambda')
         payload = {}
         payload["FileName"]=str(FileName)
         payload["TotalNodes"]=str(TotalNodes)
