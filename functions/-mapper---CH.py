@@ -46,7 +46,7 @@ def handler(event, context):
     chunkRange = 'bytes=' + str(initRange) + '-' + str(limitRange)
     obj = s3_client.get_object(Bucket=bucketIn, Key=KeyIn, Range=chunkRange)
 
-    print("donwloaded partition {0} from {1}/{2}".format(NodeNumber ,bucketIn, key))
+    print("donwloaded partition {0} from {1}/{2}".format(NodeNumber ,bucketIn, KeyIn))
     print("range {0}-{1}".format(initRange ,limitRange))
     chunk = obj['Body'].read().decode('utf-8')
     del obj
