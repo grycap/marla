@@ -22,11 +22,12 @@ import user_functions
 def handler(event, context):
     #extract filename and the partition number
     FileName = event["FileName"]
-    TotalNodes = int(event["TotalNodes"])
+    TotalNodes = event["TotalNodes"]
 
     #load environment variables
     BUCKETOUT = str(os.environ['BUCKETOUT'])
     PREFIX = str(os.environ['PREFIX'])
+    MEMORY = int(os.environ['MEMORY'])*1048576
 
     #take the file names from the mapped folder
     prefixFiles= PREFIX + '/' + FileName
@@ -41,7 +42,7 @@ def handler(event, context):
     #this function will check that 5 times
     allMapped = True
     for i in range(0, 5):
-        for j in range(0, TotalNodes):
+        for j in range(0, int(TotalNodes)):
             auxName = str(j) + "_mapped"
             if auxName in filesInBucket:
                 print(str(auxName) + " is mapped")
@@ -74,25 +75,45 @@ def handler(event, context):
     
     #create lists to store results
     Pairs = []
-    #iterate for all mapped partitions
-    for i in range (0, TotalNodes):
-        #donwload partition file
-        bucket = BUCKETOUT
-        key = PREFIX + "/" + FileName + "/" + str(i) + "_mapped"
-        obj = s3_client.get_object(Bucket=bucket, Key=key)
+    #iterate for all mapped partitions    
+    maxUsedMemory = MEMORY*0.45
+    while (i < int(TotalNodes)):
+        chunk = ""
+        usedMemory = 0
+        init = i
+        for j in range (init, int(TotalNodes)):
+            #donwload partition file
+            bucket = BUCKETOUT
+            key = PREFIX + "/" + FileName + "/" + str(j) + "_mapped"
+            
+            #extract file size
+            response = s3_client.head_object(Bucket=bucket, Key=key)
+            fileSize = response['ContentLength']
+            del response
+            #check the used memory
+            usedMemory = int(usedMemory) + int(fileSize)
+            if int(usedMemory) > int(maxUsedMemory):
+                break
+            
+            obj = s3_client.get_object(Bucket=bucket, Key=key)
+            
+            print("donwloaded " + bucket + "/" + key)
+        
+            chunk = chunk + str(obj['Body'].read().decode('utf-8'))
+            del obj
+            i +=1
 
-        print("donwloaded " + bucket + "/" + key)
-        
-        chunk = obj['Body'].read().decode('utf-8')
-        del obj
-        
+            
         #extract Names and values
         auxPairs = []
         for line in chunk.split('\n'):
             data = line.strip().split(",")
             if len(data) == 2:
-                auxName,auxValue = data
-                auxPairs.append([auxName,auxValue])
+                auxPairs.append(data)
+            else:
+                print("Incorrect formatted line ignoring: {0}".format(line))
+
+        del chunk
 
         #Merge with previous pairs and sort
         auxPairs += Pairs
@@ -107,23 +128,21 @@ def handler(event, context):
         
         ###########################
 
-        #Save new results for the next iteration
-        Pairs = []
+        #Save new results for the next iteration        
         for name, value in Results:
             Pairs.append([str(name), str(value)])
         del Results
-        
+
     #upload results
     results = ""
     for name, value in Pairs:
         results += "{0},{1}\n".format(name, value)
 
-    resultsKey = PREFIX + "/" + FileName + "/" + "results"
+    resultsKey = os.path.join(PREFIX,FileName,"results")
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
-
     
     #remove all partitions
-    for i in range (0, TotalNodes):
+    for i in range (0, int(TotalNodes)):
         bucket = BUCKETOUT
         key = PREFIX + "/" + FileName + "/" + str(i) + "_mapped"
         s3_client.delete_object(Bucket=BUCKETOUT, Key=key)
