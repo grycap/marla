@@ -75,7 +75,7 @@ def handler(event, context):
             #check if end of line is found
             if  posEndLine != -1:
                 #add extra text until '\n' and exit from loop
-                chunk = chunk + extraChunk[:posEndLine]
+                chunk = chunk + extraChunk[:posEndLine+1]
                 break
             else:
                 #save downloaded text and continue with next iteration
@@ -121,9 +121,6 @@ def handler(event, context):
 
     resultsKey = str(key) + "_mapped"
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
-
-    #remove partition
-    s3_client.delete_object(Bucket=BUCKETOUT, Key=key)
 
     #check if this is the last partition.
     if NodeNumber == TotalNodes-1:

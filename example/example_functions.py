@@ -25,4 +25,3 @@ def reducer(Pairs, Results):
             resultsIndex = resultsIndex + 1
         else:
             Results[resultsIndex][1] = int(Results[resultsIndex][1]) + int(value)
-

@@ -8,7 +8,7 @@ MARLA requires:
 
 * An AWS account
 * AWS CLI (version 1.11.76+), used to create the Lambda functions and S3 buckets
-* An IAM Role on AWS with permisions to create, delete and list keys on the used S3 buckets and permissions to invoke Lambda functions. See an example of such an IAM role in the [examples/iam-role.json](examples/iam-role.json) file.
+* An IAM Role on AWS with permissions to create, delete and list keys on the used S3 buckets and permissions to invoke Lambda functions. See an example of such an IAM role in the [examples/iam-role.json](examples/iam-role.json) file.
 
 The code of the Lambda functions and user-defined Mapper and Reduce functions is written in Python. 
 
@@ -26,11 +26,11 @@ This functions must satisfy some constraints, explained below.
 
 The mapper function must adhere to the following signature:
 
-  `def mapper(chunk, Names, Values):`
+  `def mapper(chunk, Pairs):`
   
-where `chunk` is the raw text from the input file to be mapped and `Name` and `Values` are initially empty lists.
+where `chunk` is the raw text from the input file to be mapped and `Pairs` is initially an empty list.
 
- After executing the mapper function, `Name` and `Value` must store the name-value pairs respectively. That is, the first name stored in `Name[0]` is related to the first value stored in `Values[0]` an` so on. 
+ After executing the mapper function, `Pairs` must store the name-value pairs respectively. That is, a list of 2D tuples with the pairs name-value (`Pair[i][0]` correspond to names, `Pairs[i][1]` correspond to values) extracted in the mapper function.
  
  
 ## Reducer Function
@@ -39,7 +39,7 @@ The reducer function must adhere to the following signature:
   
   `def reducer(Pairs, Results):`
   
- where `Pair` is a list of 2D tuples with the pairs name-value (`Pair[i][0]` correspond to names, `Pairs[i][1]` correspond to values) extracted in the mapper function. `Pair` is sorted alphabetically by names. `Result` is an initially empty 2D list. 
+ where `Pairs` is a list of 2D tuples with the pairs name-value (in the same format of the mapper function) extracted in the mapper function. `Pairs` is sorted alphabetically by names. `Result` is an initially empty 2D list. 
  
  After executing the reduce function, `Result` must store a list of name-value pairs (`Results[i][0]` store names, `Results[i][1]` store values).
  
