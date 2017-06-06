@@ -46,7 +46,7 @@ def handler(event, context):
     chunkRange = 'bytes=' + str(initRange) + '-' + str(limitRange)
     obj = s3_client.get_object(Bucket=bucketIn, Key=KeyIn, Range=chunkRange)
 
-    print("donwloaded partition {0} from {1}/{2}".format(NodeNumber ,bucketIn, key))
+    print("donwloaded partition {0} from {1}/{2}".format(NodeNumber ,bucketIn, KeyIn))
     print("range {0}-{1}".format(initRange ,limitRange))
     chunk = obj['Body'].read().decode('utf-8')
     del obj
@@ -121,9 +121,6 @@ def handler(event, context):
 
     resultsKey = str(key) + "_mapped"
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
-
-    #remove partition
-    s3_client.delete_object(Bucket=BUCKETOUT, Key=key)
 
     #check if this is the last partition.
     if NodeNumber == TotalNodes-1:
