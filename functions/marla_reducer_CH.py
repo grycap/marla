@@ -41,8 +41,8 @@ def handler(event, context):
     #check if all partitions are mapped
     #this function will check that 5 times
     allMapped = True
-    for i in range(0, 5):
-        for j in range(0, TotalNodes):
+    for i in range(5):
+        for j in range(TotalNodes):
             auxName = str(j) + "_mapped"
             if auxName in filesInBucket:
                 print(str(auxName) + " is mapped")
@@ -76,28 +76,29 @@ def handler(event, context):
     #create lists to store results
     Pairs = []
     #iterate for all mapped partitions    
-    maxUsedMemory = MEMORY*0.45
+    maxUsedMemory = int(MEMORY*0.45)
     while (i < TotalNodes):
         chunk = ""
         usedMemory = 0
         init = i
-        for j in range (init, TotalNodes):
-            #donwload partition file
+        for j in range(init, TotalNodes):
+            #download partition file
             bucket = BUCKETOUT
             key = PREFIX + "/" + FileName + "/" + str(j) + "_mapped"
             
             #extract file size
             response = s3_client.head_object(Bucket=bucket, Key=key)
-            fileSize = response['ContentLength']
+            fileSize = int(response['ContentLength'])
             del response
             #check the used memory
-            usedMemory = int(usedMemory) + int(fileSize)
-            if int(usedMemory) > int(maxUsedMemory):
+            usedMemory = usedMemory + fileSize
+            if usedMemory > maxUsedMemory:
+                print("Using more memory than MaxMemory. Do not read more data.")
                 break
             
             obj = s3_client.get_object(Bucket=bucket, Key=key)
             
-            print("donwloaded " + bucket + "/" + key)
+            print("downloaded " + bucket + "/" + key)
         
             chunk = chunk + str(obj['Body'].read().decode('utf-8'))
             del obj
@@ -118,21 +119,12 @@ def handler(event, context):
         #Merge with previous pairs and sort
         auxPairs += Pairs
         auxPairs.sort()
+
             #################
         ####### USER REDUCE #######
             #################
-         
-        Results = []
-        user_functions.reducer(auxPairs, Results)
-        del auxPairs
-        
-        ###########################
-
         #Save new results for the next iteration
-        Pairs = []
-        for name, value in Results:
-            Pairs.append([str(name), str(value)])
-        del Results
+        Pairs = user_functions.reducer(auxPairs)
 
     #upload results
     results = ""
@@ -143,7 +135,7 @@ def handler(event, context):
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
     
     #remove all partitions
-    for i in range (0, TotalNodes):
+    for i in range(TotalNodes):
         bucket = BUCKETOUT
         key = PREFIX + "/" + FileName + "/" + str(i) + "_mapped"
         s3_client.delete_object(Bucket=BUCKETOUT, Key=key)

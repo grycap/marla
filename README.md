@@ -26,22 +26,22 @@ This functions must satisfy some constraints, explained below.
 
 The mapper function must adhere to the following signature:
 
-  `def mapper(chunk, Pairs):`
+  `def mapper(chunk):`
   
-where `chunk` is the raw text from the input file to be mapped and `Pairs` is initially an empty list.
+where `chunk` is the raw text from the input file to be mapped..
 
- After executing the mapper function, `Pairs` must store the name-value pairs respectively. That is, a list of 2D tuples with the pairs name-value (`Pair[i][0]` correspond to names, `Pairs[i][1]` correspond to values) extracted in the mapper function.
+After executing the mapper function returns the name-value pairs respectively. That is, a list of 2D tuples with the pairs name-value (`Pair[i][0]` correspond to the name of the element `i`, `Pairs[i][1]` correspond to the value of the element `i`) extracted in the mapper function.
  
  
 ## Reducer Function
 
 The reducer function must adhere to the following signature:
   
-  `def reducer(Pairs, Results):`
+  `def reducer(Pairs):`
   
- where `Pairs` is a list of 2D tuples with the pairs name-value (in the same format of the mapper function) extracted in the mapper function. `Pairs` is sorted alphabetically by names. `Result` is an initially empty 2D list. 
+where `Pairs` is a list of 2D tuples with the pairs name-value (in the same format of the mapper function) extracted in the mapper function. `Pairs` is sorted alphabetically by names. 
  
- After executing the reduce function, `Result` must store a list of name-value pairs (`Results[i][0]` store names, `Results[i][1]` store values).
+ After executing the reduce function returns a list of name-value pairs (`Results[i][0]` correspond to the name of the element `i`, `Results[i][1]` correspond to the value of the element `i`).
  
  
 ## Configuration
