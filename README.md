@@ -26,22 +26,22 @@ This functions must satisfy some constraints, explained below.
 
 The mapper function must adhere to the following signature:
 
-  `def mapper(chunk, Pairs):`
+  `def mapper(chunk):`
   
-where `chunk` is the raw text from the input file to be mapped and `Pairs` is initially an empty list.
+where `chunk` is the raw text from the input file to be mapped..
 
- After executing the mapper function, `Pairs` must store the name-value pairs respectively. That is, a list of 2D tuples with the pairs name-value (`Pair[i][0]` correspond to names, `Pairs[i][1]` correspond to values) extracted in the mapper function.
+After executing the mapper function returns the name-value pairs respectively. That is, a list of 2D tuples with the pairs name-value (`Pair[i][0]` correspond to the name of the element `i`, `Pairs[i][1]` correspond to the value of the element `i`) extracted in the mapper function.
  
  
 ## Reducer Function
 
 The reducer function must adhere to the following signature:
   
-  `def reducer(Pairs, Results):`
+  `def reducer(Pairs):`
   
- where `Pairs` is a list of 2D tuples with the pairs name-value (in the same format of the mapper function) extracted in the mapper function. `Pairs` is sorted alphabetically by names. `Result` is an initially empty 2D list. 
+where `Pairs` is a list of 2D tuples with the pairs name-value (in the same format of the mapper function) extracted in the mapper function. `Pairs` is sorted alphabetically by names. 
  
- After executing the reduce function, `Result` must store a list of name-value pairs (`Results[i][0]` store names, `Results[i][1]` store values).
+ After executing the reduce function returns a list of name-value pairs (`Results[i][0]` correspond to the name of the element `i`, `Results[i][1]` correspond to the value of the element `i`).
  
  
 ## Configuration
@@ -58,7 +58,7 @@ The reducer function must adhere to the following signature:
   
   * BucketIn: The bucket for input files. It must exist.
   
-  * BucketOut: The bucket for output files. We strongly recommend using diferent buckets for input and output to avoid unwanted recursions.
+  * BucketOut: The bucket for output files. We strongly recommend using different buckets for input and output to avoid unwanted recursions.
   
   * RoleARN: The ARN of the role under which the Lambda functions will be executed.
   
@@ -81,7 +81,7 @@ The reducer function must adhere to the following signature:
  
  where `config.in` is the path to the configuration file. 
  
- The script will create and configure the Lambda functions and add permissions to the S3 buckets. If the script finishes succesfully, you will find a folder with the cluster name in the bucket specified in configuration file, such as this one: `BucketIn/ClusterName`
+ The script will create and configure the Lambda functions and add permissions to the S3 buckets. If the script finishes successfully, you will find a folder with the cluster name in the bucket specified in configuration file, such as this one: `BucketIn/ClusterName`
  
 Every file you upload in this folder will be processed via MapReduce. The output of the MapReduce process will be stored in the `BucketOut` S3 bucket in the following path: `BucketOut/ClusterName/NameFile/results`
 

@@ -1,21 +1,27 @@
  
-def mapper(chunk, Pairs):
-    #chunk is the raw text from data file
-    #Names and Values are empty 1D lists, you must
-    #store the pairs Name, Value into this lists
+def mapper(chunk):
+    """
+    The mapper function: process the raw text and returns the pairs name-value.
+    Args:
+    - chunk(str): the raw text from data file
+    Return(list of tuples): a list of 2D tuples with the pairs name-value. 
+    """
+    Pairs = []
     for line in chunk.split('\n'):
         data = line.strip().split(",")
         if len(data) == 6:
             zip_code, latitude, longitude, city, state, country = data
             Pairs.append((str(country), 1))
-    return
+    return Pairs
 
-def reducer(Pairs, Results):
-    #Pairs is a list of 2D tuples [(a,b),(c,d),...]
-    #sorted by "Name".
-    #Pairs estructure: Pairs[i][0] -> Name[i], Pairs[i][1] -> Value[i]
-    #Results is a empty 2D list to store de reducer results.
-    #Has the same structure of "Pairs"
+def reducer(Pairs):
+    """
+    The reducer function: reduces the Pairs.
+    Args:
+    - Pairs(list of tuples): a sorted list of 2D tuples with the pairs name-value.
+    Return(list of tuples): a list of 2D tuples with the pairs name-value. 
+    """
+    Results = []
     actualName = None
     resultsIndex = -1
     for name, value in Pairs:
@@ -25,3 +31,4 @@ def reducer(Pairs, Results):
             resultsIndex = resultsIndex + 1
         else:
             Results[resultsIndex][1] = int(Results[resultsIndex][1]) + int(value)
+    return Results

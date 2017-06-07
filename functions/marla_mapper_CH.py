@@ -82,34 +82,27 @@ def handler(event, context):
                 chunk = chunk + extraChunk
                 initRange = limitRange
                 limitRange = limitRange + extraRange
-                
-
-        
-    #declare variables to store
-    #mapping results.
-    Pairs = []
 
          ##################
     ####### USER MAPPING #######
          ##################
 
-    user_functions.mapper(chunk, Pairs)
+    Pairs = user_functions.mapper(chunk)
 
     ############################
 
     del chunk
     # I'm not sure if this is necessary ...
     # Convert to string
-    Pairs = list(map(lambda pair:(str(pair[0]),str(pair[1])), Pairs))
-    #Sort Pairs for name
-    Pairs = sorted(Pairs)
+    #Pairs = list(map(lambda pair:(str(pair[0]),str(pair[1])), Pairs))
+    # Sort Pairs for name
+    Pairs.sort()
 
          #################
     ####### USER REDUCE #######
          #################
 
-    Results = []
-    user_functions.reducer(Pairs, Results)
+    Results = user_functions.reducer(Pairs)
     del Pairs
 
     ###########################

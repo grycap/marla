@@ -181,19 +181,19 @@ aws s3 rm s3://$BUCKETIN/$CLUSTERNAME/mapper.zip &> /dev/null
 aws s3 rm s3://$BUCKETIN/$CLUSTERNAME/reducer.zip &> /dev/null
 
 #check if in FunctionsDir exists som reserved filename
-fileCount=$(find $FUNCTIONSDIR -name -mapper---CH.py | wc -l)
+fileCount=$(find $FUNCTIONSDIR -name marla_mapper_CH.py | wc -l)
 
 if [[ $file_count -gt 0 ]]
 then
-    echo -e "\e[31mError: you are using reserved name '-mapper---CH.py' in some of files in $FUNCTIONSDIR."
+    echo -e "\e[31mError: you are using reserved name 'marla_mapper_CH.py' in some of files in $FUNCTIONSDIR."
     echo -e "Please, change this filename\e[39m"
 fi
 
-fileCount=$(find $FUNCTIONSDIR -name -reducer---CH.py | wc -l)
+fileCount=$(find $FUNCTIONSDIR -name marla_reducer_CH.py | wc -l)
 
 if [[ $file_count -gt 0 ]]
 then
-    echo -e "\e[31mError: you are using reserved name '-reducer---CH.py' in some of files in $FUNCTIONSDIR."
+    echo -e "\e[31mError: you are using reserved name 'marla_reducer_CH.py' in some of files in $FUNCTIONSDIR."
     echo -e "Please, change this filename\e[39m"
 fi
 
@@ -239,7 +239,7 @@ else
 fi
 
 #copy mapper cluster function to mapper directory
-if cp functions/-mapper---CH.py $HOME/.marla/$CLUSTERNAME/functions/mapper/-mapper---CH.py
+if cp functions/marla_mapper_CH.py $HOME/.marla/$CLUSTERNAME/functions/mapper/marla_mapper_CH.py
 then
     echo -e "\e[32mCluster mapper function copied to mapper package\e[39m"
 else
@@ -268,7 +268,7 @@ else
 fi
 
 #copy reducer cluster function to reducer directory
-if cp functions/-reducer---CH.py $HOME/.marla/$CLUSTERNAME/functions/reducer/-reducer---CH.py
+if cp functions/marla_reducer_CH.py $HOME/.marla/$CLUSTERNAME/functions/reducer/marla_reducer_CH.py
 then
     echo -e "\e[32mCluster reducer function copied to reducer package\e[39m"
 else
@@ -461,7 +461,7 @@ echo '{' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '   "FunctionName": "HC-'$CLUSTERNAME'-lambda-mapper",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '   "Runtime": "python3.6",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '   "Role": "'$ROLE'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
-echo '   "Handler": "-mapper---CH.handler",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "Handler": "marla_mapper_CH.handler",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '   "Code": {' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '      "S3Bucket": "'$BUCKETIN'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '      "S3Key": "'$CLUSTERNAME'/mapper.zip"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
@@ -532,7 +532,7 @@ echo '{' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '   "FunctionName": "HC-'$CLUSTERNAME'-lambda-reducer",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '   "Runtime": "python3.6",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '   "Role": "'$ROLE'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
-echo '   "Handler": "-reducer---CH.handler",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "Handler": "marla_reducer_CH.handler",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '   "Code": {' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '      "S3Bucket": "'$BUCKETIN'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '      "S3Key": "'$CLUSTERNAME'/reducer.zip"' >> $HOME/.marla/$CLUSTERNAME/reducer.json
@@ -591,4 +591,4 @@ fi
 
 echo "-------------------------"
 
-echo "Cluster generated succesfully!"
+echo "Cluster generated successfully!"
