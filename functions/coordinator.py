@@ -24,6 +24,8 @@ def handler(event, context):
         key = record['s3']['object']['key']        
         event = record['eventName']
 
+        memoryLimit = 0.30
+        
         #check if event type is "ObjectCreated"
         if event.find("ObjectCreated:") != 0:
             print("not ObjectCreated event")
@@ -71,7 +73,7 @@ def handler(event, context):
             numberMappers = int(fileSize/chunkSize)+1
 
         #Ensure that chunk size is smaller than lambda function memory
-        secureMemorySize = int(MEMORY*0.45)
+        secureMemorySize = int(MEMORY*memoryLimit)
         if chunkSize > secureMemorySize:
             print("chunk size to large (" + str(chunkSize) + " bytes), changing to " + str(secureMemorySize) + " bytes")
             chunkSize = secureMemorySize

@@ -87,6 +87,7 @@ def handler(event, context):
     ####### USER MAPPING #######
          ##################
 
+    print(" Mapping...")
     Pairs = user_functions.mapper(chunk)
 
     ############################
@@ -102,6 +103,7 @@ def handler(event, context):
     ####### USER REDUCE #######
          #################
 
+    print(" Reducing...")
     Results = user_functions.reducer(Pairs)
     del Pairs
 
@@ -112,12 +114,16 @@ def handler(event, context):
     for name, value in Results:
         results += "{0},{1}\n".format(name, value)
 
+    del Results
     resultsKey = str(key) + "_mapped"
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
 
-    #check if this is the last partition.
-    if NodeNumber == TotalNodes-1:
-        #lunch lambda function reducer
+    #check if this is the penultimate partition.
+    launch_mapper = TotalNodes-2
+    if int(TotalNodes) == 1:
+        launch_mapper = 0
+    if NodeNumber == launch_mapper:
+        #launch lambda function reducer
         print("lunching reducer function")
         lambda_client = boto3.client('lambda')
         payload = {}

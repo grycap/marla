@@ -24,6 +24,8 @@ def handler(event, context):
     FileName = event["FileName"]
     TotalNodes = int(event["TotalNodes"])
 
+    memoryLimit = 0.30
+    
     #load environment variables
     BUCKETOUT = str(os.environ['BUCKETOUT'])
     PREFIX = str(os.environ['PREFIX'])
@@ -76,7 +78,7 @@ def handler(event, context):
     #create lists to store results
     Pairs = []
     #iterate for all mapped partitions    
-    maxUsedMemory = int(MEMORY*0.45)
+    maxUsedMemory = int(MEMORY*memoryLimit)
     while (i < TotalNodes):
         chunk = ""
         usedMemory = 0
