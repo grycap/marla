@@ -42,7 +42,8 @@ MAXMAPPERNODES=`sed -n 's/^MapperNodes:[[:space:]]*//p' $CONFIGFILE`
 MINBLOCKSIZE=`sed -n 's/^MinBlockSize:[[:space:]]*//p' $CONFIGFILE`
 MINBLOCKSIZE=$(($MINBLOCKSIZE*1024))
 KMSKEYARN=`sed -n 's/^KMSKeyARN:[[:space:]]*//p' $CONFIGFILE`
-MEMORY=`sed -n 's/^Memory:[[:space:]]*//p' $CONFIGFILE`
+MAPPERMEMORY=`sed -n 's/^MapperMemory:[[:space:]]*//p' $CONFIGFILE`
+REDUCERMEMORY=`sed -n 's/^ReducerMemory:[[:space:]]*//p' $CONFIGFILE`
 TIMEOUT=`sed -n 's/^TimeOut:[[:space:]]*//p' $CONFIGFILE`
 
 echo "----Parameter list----"
@@ -128,11 +129,19 @@ else
     missingParameter="true"
 fi
 
-if [[ $MEMORY = *[!\ ]* ]]
+if [[ $MAPPERMEMORY = *[!\ ]* ]]
 then
-    echo "Memory: $MEMORY "
+    echo "MapperMemory: $MAPPERMEMORY "
 else
-    echo -e "\e[31mMissing 'Memory:' in configuration file \e[39m"
+    echo -e "\e[31mMissing 'MapperMemory:' in configuration file \e[39m"
+    missingParameter="true"
+fi
+
+if [[ $REDUCERMEMORY = *[!\ ]* ]]
+then
+    echo "ReducerMemory: $REDUCERMEMORY "
+else
+    echo -e "\e[31mMissing 'ReducerMemory:' in configuration file \e[39m"
     missingParameter="true"
 fi
 
@@ -360,7 +369,7 @@ echo '      "S3Key": "'$CLUSTERNAME'/coordinator.zip"' >> $HOME/.marla/$CLUSTERN
 #echo '      "S3ObjectVersion": "0.1"' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '   },' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '   "Timeout": '$TIMEOUT',' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
-echo '   "MemorySize": '$MEMORY',' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '   "MemorySize": 128,' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 #echo '   "Publish": true,' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '   "Environment": {' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '       "Variables": {' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
@@ -369,7 +378,7 @@ echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> $HOME/.marla/$CLUSTERNAME/coor
 echo '           "PREFIX": "'$CLUSTERNAME'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '           "MAPPERNUMBER": "'$MAXMAPPERNODES'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '           "MINBLOCKSIZE": "'$MINBLOCKSIZE'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
-echo '           "MEMORY": "'$MEMORY'"' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '           "MEMORY": "'$MAPPERMEMORY'"' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '       }' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '   },' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '   "KMSKeyArn": "'$KMSKEYARN'"' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
@@ -468,14 +477,14 @@ echo '      "S3Key": "'$CLUSTERNAME'/mapper.zip"' >> $HOME/.marla/$CLUSTERNAME/m
 #echo '      "S3ObjectVersion": "0.1"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '   },' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '   "Timeout": '$TIMEOUT',' >> $HOME/.marla/$CLUSTERNAME/mapper.json
-echo '   "MemorySize": '$MEMORY',' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '   "MemorySize": '$MAPPERMEMORY',' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 #echo '   "Publish": true,' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '   "Environment": {' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '       "Variables": {' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '           "BUCKET": "'$BUCKETIN'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '           "PREFIX": "'$CLUSTERNAME'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
-echo '           "MEMORY": "'$MEMORY'"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '           "MEMORY": "'$MAPPERMEMORY'"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '       }' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '   },' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '   "KMSKeyArn": "'$KMSKEYARN'"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
@@ -539,13 +548,13 @@ echo '      "S3Key": "'$CLUSTERNAME'/reducer.zip"' >> $HOME/.marla/$CLUSTERNAME/
 #echo '      "S3ObjectVersion": "0.1"' >> reducer.json
 echo '   },' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '   "Timeout": '$TIMEOUT',' >> $HOME/.marla/$CLUSTERNAME/reducer.json
-echo '   "MemorySize": '$MEMORY',' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '   "MemorySize": '$REDUCERMEMORY',' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 #echo '   "Publish": true,' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '   "Environment": {' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '       "Variables": {' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '           "PREFIX": "'$CLUSTERNAME'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
-echo '           "MEMORY": "'$MEMORY'"' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '           "MEMORY": "'$REDUCERMEMORY'"' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '       }' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '   },' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '   "KMSKeyArn": "'$KMSKEYARN'"' >> $HOME/.marla/$CLUSTERNAME/reducer.json
