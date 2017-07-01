@@ -1,6 +1,6 @@
 
-ClusterName: mr-cluster-00
-FunctionsDir: example
+ClusterName: benchmark-scan1a-128MB
+FunctionsDir: propies
 FunctionsFile: example_functions.py
 Region: us-east-1
 BucketIn: marla-bucket-in
@@ -11,6 +11,7 @@ MapperNodes: 10
 MinBlockSize: 1
 KMSKeyARN: arn:aws:kms:us-east-1:974349055189:key/5fc43618-9206-4ba1-a6c5-8f2a17db8d26
 #Memory of each lambda function expressed in MB
-Memory: 128
+MapperMemory: 1216
+ReducerMemory: 128
 #TimeOut expressed in seconds
-TimeOut: 60
+TimeOut: 180
