@@ -54,7 +54,7 @@ def handler(event, context):
                 break
         if allMapped == True:
             break
-        time.sleep( 5 )
+        time.sleep( 0.1 )
 
     #if mapping is not finished, the function
     #invoke another reduce function and termines
