@@ -24,6 +24,8 @@ def handler(event, context):
         key = record['s3']['object']['key']        
         event = record['eventName']
 
+        memoryLimit = 0.30
+        
         #check if event type is "ObjectCreated"
         if event.find("ObjectCreated:") != 0:
             print("not ObjectCreated event")
@@ -34,10 +36,11 @@ def handler(event, context):
         
         #load environment variables
         BUCKET = str(os.environ['BUCKET'])
-        #BUCKETOUT = str(os.environ['BUCKETOUT'])
+        BUCKETOUT = str(os.environ['BUCKETOUT'])
         PREFIX = str(os.environ['PREFIX'])
         MAPPERNUMBER = int(os.environ['MAPPERNUMBER'])
         MINBLOCKSIZE = int(os.environ['MINBLOCKSIZE'])
+        MAXBLOCKSIZE = int(os.environ['MAXBLOCKSIZE'])
         MEMORY = float(os.environ['MEMORY'])*1048576.0
 
         #check bucket and prefix
@@ -63,7 +66,7 @@ def handler(event, context):
         print("FileSize = " + str(fileSize))
 
         #Calculate the chunk size
-        chunkSize = int(fileSize/MAPPERNUMBER)
+        chunkSize = int(fileSize/(MAPPERNUMBER-1))
         numberMappers = MAPPERNUMBER
         if chunkSize < MINBLOCKSIZE:
             print("chunk size to small (" + str(chunkSize) + " bytes), changing to " + str(MINBLOCKSIZE) + " bytes")
@@ -71,32 +74,40 @@ def handler(event, context):
             numberMappers = int(fileSize/chunkSize)+1
 
         #Ensure that chunk size is smaller than lambda function memory
-        secureMemorySize = int(MEMORY*0.45)
+        secureMemorySize = int(MEMORY*memoryLimit)
         if chunkSize > secureMemorySize:
             print("chunk size to large (" + str(chunkSize) + " bytes), changing to " + str(secureMemorySize) + " bytes")
             chunkSize = secureMemorySize
             numberMappers = int(fileSize/chunkSize)+1
-            
+
+        if MAXBLOCKSIZE > 0:
+            if chunkSize > MAXBLOCKSIZE:
+                print("chunk size to big (" + str(chunkSize) + " bytes), changing to " + str(MAXBLOCKSIZE) + " bytes")
+                chunkSize = MAXBLOCKSIZE
+                numberMappers = int(fileSize/chunkSize)+1
+        
         print("Using chunk size of " + str(chunkSize) + " bytes, and " + str(numberMappers) + " nodes")
 
 
-        #lunch mappers
-        for i in range(0, numberMappers):
+        #create a dummy file in output folder
+        keyDummy= PREFIX + '/' + filename + '/dummy'
+        s3_client.put_object(Body=str(numberMappers),Bucket=BUCKETOUT, Key=keyDummy)
 
-            #lunch lambda function mapper
-            payload = {}
-            payload["FileName"]=str(filename)
-            payload["NodeNumber"]=str(i)
-            payload["TotalNodes"]=str(numberMappers)
-            payload["ChunkSize"]=str(chunkSize)
-            payload["FileSize"]=str(fileSize)
-            payload["KeyIn"]=str(key)
-            response_invoke = lambda_client.invoke(
-                ClientContext='ClusterHD-'+BUCKET,
-                FunctionName='HC-'+PREFIX+'-lambda-mapper',
-                InvocationType='Event',
-                LogType='Tail',
-                Payload=json.dumps(payload),
-            )            
+        
+        #launch first mapper
+        payload = {}
+        payload["FileName"]=str(filename)
+        payload["NodeNumber"]=str(0)
+        payload["TotalNodes"]=str(numberMappers)
+        payload["ChunkSize"]=str(chunkSize)
+        payload["FileSize"]=str(fileSize)
+        payload["KeyIn"]=str(key)
+        response_invoke = lambda_client.invoke(
+            ClientContext='ClusterHD-'+BUCKET,
+            FunctionName='HC-'+PREFIX+'-lambda-mapper',
+            InvocationType='Event',
+            LogType='Tail',
+            Payload=json.dumps(payload),
+        )            
             
     return
