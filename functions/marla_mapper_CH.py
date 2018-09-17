@@ -16,6 +16,7 @@
 import boto3
 import os
 import json
+import math
 import user_functions
 
 def handler(event, context):
@@ -32,6 +33,39 @@ def handler(event, context):
     BUCKETOUT = str(os.environ['BUCKETOUT'])
     PREFIX = str(os.environ['PREFIX'])
 
+    if NodeNumber == 0:
+        launcherNodes = 1 # Only this mapper is launching at this time
+    else:
+        launcherNodes = int(pow(2,int(math.log(NodeNumber,2))+1))   # Calculate the number of nodes launching mappers
+
+    # The first node identifier to launch in this iteration is equal to "launcherNodes"
+    # because index begins by 0. Each launcher node will launch his position beginning
+    # in this position.
+    myNextLaunch = launcherNodes + NodeNumber
+
+    while myNextLaunch < TotalNodes:
+
+            #launch lambda function mapper
+            payload = {}
+            payload["FileName"]=str(FileName)
+            payload["NodeNumber"]=str(myNextLaunch)
+            payload["TotalNodes"]=str(TotalNodes)
+            payload["ChunkSize"]=str(ChunkSize)
+            payload["FileSize"]=str(FileSize)
+            payload["KeyIn"]=str(KeyIn)
+            lambda_client = boto3.client('lambda')
+            response_invoke = lambda_client.invoke(
+                ClientContext='ClusterHD-'+BUCKET,
+                FunctionName='HC-'+PREFIX+'-lambda-mapper',
+                InvocationType='Event',
+                LogType='Tail',
+                Payload=json.dumps(payload),
+            )
+            # In each iteration, the number of launcher nodes
+            # will be multiplied by 2
+            launcherNodes = 2*launcherNodes
+            myNextLaunch = launcherNodes + NodeNumber
+    
     #download partition from data file
     bucketIn = BUCKET
     key = PREFIX + "/" + FileName + "/" + str(NodeNumber)
@@ -117,8 +151,8 @@ def handler(event, context):
 
     #check if this is the last partition.
     if NodeNumber == TotalNodes-1:
-        #lunch lambda function reducer
-        print("lunching reducer function")
+        #launch lambda function reducer
+        print("launching reducer function")
         lambda_client = boto3.client('lambda')
         payload = {}
         payload["FileName"]=str(FileName)
