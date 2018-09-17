@@ -1,16 +1,18 @@
 
-ClusterName: mr-cluster-00
-FunctionsDir: example
+ClusterName: benchmark-scan1a-128MB
+FunctionsDir: propies_scan1a
 FunctionsFile: example_functions.py
 Region: us-east-1
-BucketIn: marla-bucket-in
-BucketOut: marla-bucket-out
-RoleARN: arn:aws:iam::974349055189:role/role-lambda-s3-mapreduce
-MapperNodes: 10
+BucketIn: alucloud30-marlain
+BucketOut: hc-alucloud30-marlaout
+RoleARN: arn:aws:iam::974349055189:role/lambda-s3-execution-role
+MapperNodes: 100
 #Block size is expressed in KB
-MinBlockSize: 1
-KMSKeyARN: arn:aws:kms:us-east-1:974349055189:key/5fc43618-9206-4ba1-a6c5-8f2a17db8d26
+MinBlockSize: 1024
+MaxBlockSize: 0
+#KMSKeyARN: arn:aws:kms:eu-west-1:813227086520:key/267b3b23-f030-46b5-9f4a-781b2b04ece4
 #Memory of each lambda function expressed in MB
-Memory: 128
+MapperMemory: 1536
+ReducerMemory: 1536
 #TimeOut expressed in seconds
-TimeOut: 60
+TimeOut: 180
