@@ -32,6 +32,7 @@ def handler(event, context):
     BUCKET = str(os.environ['BUCKET'])
     BUCKETOUT = str(os.environ['BUCKETOUT'])
     PREFIX = str(os.environ['PREFIX'])
+    NREDUCERS = int(os.environ['NREDUCERS'])
 
     if NodeNumber == 0:
         launcherNodes = 1 # Only this mapper is launching at this time
@@ -68,7 +69,6 @@ def handler(event, context):
     
     #download partition from data file
     bucketIn = BUCKET
-    key = PREFIX + "/" + FileName + "/" + str(NodeNumber)
     s3_client = boto3.client('s3')
 
     #calculate the partition range
@@ -141,27 +141,71 @@ def handler(event, context):
 
     ###########################
 
+    Results.sort()
+    
     #upload results
     results = ""
+    ASCIIinterval = (130-32)/NREDUCERS
+    ASCIIlimit = ASCIIinterval+32
+    ASCIInumInterval = 0       # Actual interval
+    partialKey = PREFIX + "/" + FileName + "/"
     for name, value in Results:
-        results += "{0},{1}\n".format(name, value)
 
-    resultsKey = str(key) + "_mapped"
-    s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
+        # take ASCII value of first "name" character
+        ASCIIval = ord(str(name)[0])
 
+        if ASCIIval >= 999:
+            #Invalid data
+            print("Name: " + str(name) + " out of range")
+            continue
+        
+        # Add pairs to results until ASCII limit has been reached
+        if ASCIIval < ASCIIlimit:
+            results += "{0},{1}\n".format(name, value)
+        else:
+            while ASCIIval >= ASCIIlimit:
+                print("ASCII group " + str(ASCIInumInterval) + " (" + str(name) +")")
+                # Upload results
+                resultsKey = partialKey + str(ASCIInumInterval) + "_" + str(NodeNumber)
+                s3_client.put_object(Body=results,Bucket=BUCKETOUT,Key=resultsKey)
+                
+                # Update ASCII interval
+                ASCIIlimit +=ASCIIinterval
+
+                # Last ASCII interval chunk will contain
+                # all extended characters too
+                if ASCIIlimit > 126:
+                    ASCIIlimit = 999
+                
+                # Clear results
+                results = ""
+                ASCIInumInterval += 1
+            results += "{0},{1}\n".format(name, value)
+        
+
+    # Create remaining interval files
+    for i in range (ASCIInumInterval,NREDUCERS):
+        print("ASCII group " + str(i) + " (remaining)")
+        # Upload results
+        resultsKey = partialKey + str(i) + "_" + str(NodeNumber)
+        s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
+        results = ""
+                
     #check if this is the last partition.
     if NodeNumber == TotalNodes-1:
-        #launch lambda function reducer
-        print("launching reducer function")
-        lambda_client = boto3.client('lambda')
-        payload = {}
-        payload["FileName"]=str(FileName)
-        payload["TotalNodes"]=str(TotalNodes)
-        response_invoke = lambda_client.invoke(
-            ClientContext='ClusterHD-'+BUCKETOUT,
-            FunctionName='HC-'+PREFIX+'-lambda-reducer',
-            InvocationType='Event',
-            LogType='Tail',
-            Payload=json.dumps(payload),
-        )
+        #launch lambda functions reducers
+        print("launching reducer functions")
+        for i in range(0,NREDUCERS):
+            lambda_client = boto3.client('lambda')
+            payload = {}
+            payload["ReducerNumber"] = str(i)
+            payload["FileName"]=str(FileName)
+            payload["TotalNodes"]=str(TotalNodes)
+            response_invoke = lambda_client.invoke(
+                ClientContext='ClusterHD-'+BUCKETOUT,
+                FunctionName='HC-'+PREFIX+'-lambda-reducer',
+                InvocationType='Event',
+                LogType='Tail',
+                Payload=json.dumps(payload),
+            )
         

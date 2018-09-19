@@ -20,26 +20,38 @@ import json
 import sys
 import user_functions
 import resource
+import botocore
 
-def downloadPairs(usedMemory, maxUsedMemory, actualPartition, TotalNodes, BUCKETOUT, PREFIX, FileName, s3_client):
+def downloadPairs(filesSize,usedMemory, maxUsedMemory, actualPartition, TotalNodes, BUCKETOUT, PREFIX, FileName, ReducerNumber, s3_client):
 
     chunk = ""
     init = actualPartition
     for j in range(init, TotalNodes):
         #download partition file
         bucket = BUCKETOUT
-        key = PREFIX + "/" + FileName + "/" + str(j) + "_mapped"
-        
-        #extract file size
-        response = s3_client.head_object(Bucket=bucket, Key=key)
-        fileSize = int(response['ContentLength'])
+        key = PREFIX + "/" + FileName + "/" + str(ReducerNumber) + "_" + str(j)
+
+        #Get corresponding file size
+        fileSize = filesSize[j]
         #check the used memory
         usedMemory = usedMemory + fileSize
         if usedMemory > maxUsedMemory and j != init:
             print("Using more memory than MaxMemory. Do not read more data.")
             break
+
+        # Try to download file a maximum of 5 times
+        for i in range(5):
+            try:
+                obj = s3_client.get_object(Bucket=bucket, Key=key)
+                break
+            except botocore.exceptions.ClientError as e:
+                print("Can't download " + str(auxName) + ", try num " + str(i))
+                time.sleep(0.2)
+                if i == 4:
+                    print("Unable to download + " + str(auxName) + " aborting reduce")
+                    sys.exit()
+            
         
-        obj = s3_client.get_object(Bucket=bucket, Key=key)
         
         print("downloaded " + bucket + "/" + key)
         print("used memory: {0}".format(usedMemory))
@@ -72,7 +84,7 @@ def handler(event, context):
     #extract filename and the partition number
     FileName = event["FileName"]
     TotalNodes = int(event["TotalNodes"])
-
+    ReducerNumber = int(event["ReducerNumber"])
     memoryLimit = 0.06
     
     #load environment variables
@@ -86,31 +98,32 @@ def handler(event, context):
     soft,hard = resource.getrlimit(resource.RLIMIT_AS)
 
     print("Setting memory limtis, Soft: {0} B  Hard: {1} B".format(soft,hard))
-    
-    #take the file names from the mapped folder
-    prefixFiles= PREFIX + '/' + FileName
-    s3_client = boto3.client('s3')
-    filesInBucket = []
-    for fileDir in s3_client.list_objects(Bucket=BUCKETOUT, Prefix=prefixFiles)['Contents']:    
-        data = fileDir['Key'].strip().split("/")
-        posName = len(data)
-        filesInBucket.append(str(data[posName-1]))
 
+
+    #Get boto3 s3 client
+    s3_client = boto3.client('s3')
+
+        
     #check if all partitions are mapped
     #this function will check that 5 times
+    keyPrefix = PREFIX + "/" + FileName + "/" + str(ReducerNumber) + "_"
+    filesSize = [] # Store mapped files size
     for i in range(5):
         allMapped = True
-        for j in range(TotalNodes):
-            auxName = str(j) + "_mapped"
-            if auxName in filesInBucket:
-                print(str(auxName) + " is mapped")
-            else:
-                print("mapping is not finished")
+        for j in range(len(filesSize),TotalNodes):
+            auxName = keyPrefix + str(j)
+            try:
+                response = s3_client.head_object(Bucket=BUCKETOUT, Key=auxName)
+                filesSize.append(int(response['ContentLength']))
+            except botocore.exceptions.ClientError as e:
+                print("mapping of " + str(auxName) + " not finished")
                 allMapped = False
                 break
         if allMapped == True:
             break
-        time.sleep( 0.1 )
+        time.sleep( 0.5 )
+
+        
 
     #if mapping is not finished, the function
     #invoke another reduce function and termines
@@ -118,6 +131,7 @@ def handler(event, context):
         #lunch lambda function reducer
         lambda_client = boto3.client('lambda')
         payload = {}
+        payload["ReducerNumber"] = str(ReducerNumber)
         payload["FileName"]=str(FileName)
         payload["TotalNodes"]=str(TotalNodes)
         response_invoke = lambda_client.invoke(
@@ -129,18 +143,24 @@ def handler(event, context):
         )
         return
 
+    if len(filesSize) != TotalNodes:
+        print("Error: number of file sizes stored (" + str(len(filesSize)) + ") not equal to total mapper nodes (" + str(TotalNodes) + ")")
+        print("Reduce aborted")
+        return
+    
     #if mapping is finished, begin the reduce.
     
     #create lists to store results
     Pairs = []
     #iterate for all mapped partitions    
     maxUsedMemory = int(MEMORY*memoryLimit)
+    i=0
     print("Max memory to download data: {0} B".format(maxUsedMemory))
     while (i < TotalNodes):
 
         #download and extract pairs
         usedMemory = sys.getsizeof(Pairs)
-        auxPairs, i = downloadPairs(usedMemory,maxUsedMemory, i, TotalNodes, BUCKETOUT, PREFIX, FileName, s3_client)
+        auxPairs, i = downloadPairs(filesSize,usedMemory,maxUsedMemory, i, TotalNodes, BUCKETOUT, PREFIX, FileName, ReducerNumber, s3_client)
         
         #Merge with previous pairs and sort
         print("Sorting data")
@@ -187,11 +207,11 @@ def handler(event, context):
         
     del Pairs
     print("Uploading data")
-    resultsKey = os.path.join(PREFIX,FileName,"results")
+    resultsKey = os.path.join(PREFIX,FileName,str(ReducerNumber) + "_results")
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
     
     #remove all partitions
     for i in range(TotalNodes):
         bucket = BUCKETOUT
-        key = PREFIX + "/" + FileName + "/" + str(i) + "_mapped"
+        key = PREFIX + "/" + FileName + "/" + str(ReducerNumber) + "_" + str(i)
         s3_client.delete_object(Bucket=BUCKETOUT, Key=key)
