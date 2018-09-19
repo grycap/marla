@@ -1,6 +1,6 @@
 
 ClusterName: benchmark-scan1a-128MB
-FunctionsDir: propies_scan1a
+FunctionsDir: propies_scan1b
 FunctionsFile: example_functions.py
 Region: us-east-1
 BucketIn: alucloud30-marlain
@@ -10,9 +10,11 @@ MapperNodes: 100
 #Block size is expressed in KB
 MinBlockSize: 1024
 MaxBlockSize: 0
+#optional KMS
 #KMSKeyARN: arn:aws:kms:eu-west-1:813227086520:key/267b3b23-f030-46b5-9f4a-781b2b04ece4
 #Memory of each lambda function expressed in MB
 MapperMemory: 1536
 ReducerMemory: 1536
 #TimeOut expressed in seconds
 TimeOut: 180
+ReducersNumber: 10
