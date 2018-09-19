@@ -16,15 +16,16 @@
 # limitations under the License. 
 
 
-if [ $# -ne 1 ]; then
-  echo "Usage: $0 cluster-name"
+if [ $# -ne 2 ]; then
+  echo "Usage: $0 region cluster-name"
   exit -1
 fi
 
-CLUSTERNAME=$1
+REGION=$1
+CLUSTERNAME=$2
 
 rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
-if aws lambda delete-function --function-name HC-$CLUSTERNAME-lambda-mapper
+if aws lambda delete-function --region $REGION --function-name HC-$CLUSTERNAME-lambda-mapper
 then
     echo "Mapper function removed from cluster '$CLUSTERNAME'"
 else
@@ -34,7 +35,7 @@ else
 fi
 
 rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
-if aws lambda delete-function --function-name HC-$CLUSTERNAME-lambda-reducer
+if aws lambda delete-function --region $REGION --function-name HC-$CLUSTERNAME-lambda-reducer
 then
     echo "Reducer function removed from cluster '$CLUSTERNAME'"
 else
@@ -45,7 +46,7 @@ fi
 
 
 rm $HOME/.marla/$CLUSTERNAME/stderr &> /dev/null
-if aws lambda delete-function --function-name HC-$CLUSTERNAME-lambda-coordinator
+if aws lambda delete-function --region $REGION --function-name HC-$CLUSTERNAME-lambda-coordinator
 then
     echo "Coordinator function removed from cluster '$CLUSTERNAME'"
 else

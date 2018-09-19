@@ -47,6 +47,7 @@ KMSKEYARN=`sed -n 's/^KMSKeyARN:[[:space:]]*//p' $CONFIGFILE`
 MAPPERMEMORY=`sed -n 's/^MapperMemory:[[:space:]]*//p' $CONFIGFILE`
 REDUCERMEMORY=`sed -n 's/^ReducerMemory:[[:space:]]*//p' $CONFIGFILE`
 TIMEOUT=`sed -n 's/^TimeOut:[[:space:]]*//p' $CONFIGFILE`
+NREDUCERS=`sed -n 's/^ReducersNumber:[[:space:]]*//p' $CONFIGFILE`
 
 USEKMSKEY=0
 
@@ -164,6 +165,14 @@ then
 else
     echo -e "\e[31mMissing 'TimeOut:' in configuration file \e[39m"
     missingParameter="true"
+fi
+
+if [[ $NREDUCERS = *[!\ ]* ]]
+then
+    echo "ReducersNumber: $NREDUCERS "
+else
+    echo -e "Missing 'ReducersNumber:' in configuration file. Only 1 reducer will be used"
+    NREDUCERS=1
 fi
 
 if [ $missingParameter == "true" ]
@@ -392,7 +401,8 @@ echo '           "PREFIX": "'$CLUSTERNAME'",' >> $HOME/.marla/$CLUSTERNAME/coord
 echo '           "MAPPERNUMBER": "'$MAXMAPPERNODES'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '           "MINBLOCKSIZE": "'$MINBLOCKSIZE'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '           "MAXBLOCKSIZE": "'$MAXBLOCKSIZE'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
-echo '           "MEMORY": "'$MAPPERMEMORY'"' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '           "MEMORY": "'$MAPPERMEMORY'",' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
+echo '           "NREDUCERS": "'$NREDUCERS'"' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 echo '       }' >> $HOME/.marla/$CLUSTERNAME/coordinator.json
 if [ $USEKMSKEY == 1 ]
 then
@@ -503,7 +513,8 @@ echo '       "Variables": {' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '           "BUCKET": "'$BUCKETIN'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '           "PREFIX": "'$CLUSTERNAME'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
-echo '           "MEMORY": "'$MAPPERMEMORY'"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '           "MEMORY": "'$MAPPERMEMORY'",' >> $HOME/.marla/$CLUSTERNAME/mapper.json
+echo '           "NREDUCERS": "'$NREDUCERS'"' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 echo '       }' >> $HOME/.marla/$CLUSTERNAME/mapper.json
 if [ $USEKMSKEY == 1 ]
 then
@@ -578,7 +589,8 @@ echo '   "Environment": {' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '       "Variables": {' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '           "BUCKETOUT": "'$BUCKETOUT'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '           "PREFIX": "'$CLUSTERNAME'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
-echo '           "MEMORY": "'$REDUCERMEMORY'"' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '           "MEMORY": "'$REDUCERMEMORY'",' >> $HOME/.marla/$CLUSTERNAME/reducer.json
+echo '           "NREDUCERS": "'$NREDUCERS'"' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 echo '       }' >> $HOME/.marla/$CLUSTERNAME/reducer.json
 if [ $USEKMSKEY == 1 ]
 then
