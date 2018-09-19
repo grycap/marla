@@ -42,7 +42,7 @@ def handler(event, context):
         MINBLOCKSIZE = int(os.environ['MINBLOCKSIZE'])
         MAXBLOCKSIZE = int(os.environ['MAXBLOCKSIZE'])
         MEMORY = float(os.environ['MEMORY'])*1048576.0
-
+        
         #check bucket and prefix
         if bucket != BUCKET:
             print("wrong bucket")
@@ -91,8 +91,7 @@ def handler(event, context):
 
         #create a dummy file in output folder
         keyDummy= PREFIX + '/' + filename + '/dummy'
-        s3_client.put_object(Body=str(numberMappers),Bucket=BUCKETOUT, Key=keyDummy)
-
+        s3_client.put_object(Body=str(numberMappers),Bucket=BUCKETOUT, Key=keyDummy)        
         
         #launch first mapper
         payload = {}
