@@ -65,12 +65,18 @@ where `Pairs` is a list of 2D tuples with the pairs name-value (in the same form
   * MapperNodes: The desired number of concurrent mapper functions.
   
   * MinBlockSize: The minimum size, in KB, of text that  every mapper will process.
-   
-  * KMSKeyARN: The ARN of KMS key used to encript environment variables.
   
-  * Memory: The memory of the Lambda functions. The maximum text size to process by every Mapper will be restricted by this amount of memory.
+  * MaxBlockSize: Maximum size, in KB, of text that  every mapper will process.
+   
+  * KMSKeyARN: The ARN of KMS key used to encript environment variables. (Optional)
+  
+  * MapperMemory: The memory of the mapper Lambda functions. The maximum text size to process by every Mapper will be restricted by this amount of memory.
+  
+  * ReducerMemory: The memory of the reduce Lambda functions.
   
   * TimeOut: The elapsed time for a Lambda function to run before terminating it.
+  
+  * ReducersNumber: Number of reducers to use
  
  
 ## Creating and Processing the Data
