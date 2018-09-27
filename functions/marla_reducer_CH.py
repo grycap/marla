@@ -21,6 +21,8 @@ import sys
 import user_functions
 import resource
 import botocore
+import hashlib
+
 
 def downloadPairs(filesSize,usedMemory, maxUsedMemory, actualPartition, TotalNodes, BUCKETOUT, PREFIX, FileName, ReducerNumber, s3_client):
 
@@ -31,6 +33,9 @@ def downloadPairs(filesSize,usedMemory, maxUsedMemory, actualPartition, TotalNod
         bucket = BUCKETOUT
         key = PREFIX + "/" + FileName + "/" + str(ReducerNumber) + "_" + str(j)
 
+        #Add hash prefix
+        key = str(hashlib.md5(key.encode()).hexdigest()) + "/" + key                
+        
         #Get corresponding file size
         fileSize = filesSize[j]
         #check the used memory
@@ -58,6 +63,7 @@ def downloadPairs(filesSize,usedMemory, maxUsedMemory, actualPartition, TotalNod
         
         chunk = chunk + str(obj['Body'].read().decode('utf-8'))
         actualPartition +=1
+        obj = None
 
     del obj
 
@@ -65,7 +71,7 @@ def downloadPairs(filesSize,usedMemory, maxUsedMemory, actualPartition, TotalNod
     print("Spliting lines")
     auxPairs = []
     chunkList = chunk.split('\n')
-    chunk = None
+    chunk = ""
     del chunk
 
     print("Extract columns")
@@ -76,7 +82,8 @@ def downloadPairs(filesSize,usedMemory, maxUsedMemory, actualPartition, TotalNod
             auxPairs.append(data)
         else:
             print("Incorrect formatted line ignoring: {0}".format(line))
-        
+
+    chunkList = ""
     del chunkList   
     return auxPairs, actualPartition
 
@@ -85,20 +92,31 @@ def handler(event, context):
     FileName = event["FileName"]
     TotalNodes = int(event["TotalNodes"])
     ReducerNumber = int(event["ReducerNumber"])
-    memoryLimit = 0.06
+    memoryLimit = 0.03
     
     #load environment variables
     BUCKETOUT = str(os.environ['BUCKETOUT'])
     PREFIX = str(os.environ['PREFIX'])
     MEMORY = int(os.environ['MEMORY'])*1048576
 
-    #limit memory usage (soft,hard)
-    resource.setrlimit(resource.RLIMIT_AS, (MEMORY, MEMORY))
+    #Check invocation number
+    Invocation = int(event["Invocation"])
 
-    soft,hard = resource.getrlimit(resource.RLIMIT_AS)
-
-    print("Setting memory limtis, Soft: {0} B  Hard: {1} B".format(soft,hard))
-
+    print("Invocation number " + str(Invocation) + " of reduce function " + str(ReducerNumber))
+    
+    if ReducerNumber >= 0 and Invocation > 20:
+        print("Too many invocations. Abort reduce.")
+        return
+    elif ReducerNumber < 0 and Invocation > 70:
+        print("Too many invocations. Abort reduce.")
+        return        
+    
+    tester=False
+    if ReducerNumber < 0:
+        tester = True
+        NREDUCERS = int(os.environ['NREDUCERS'])
+        ReducerNumber = NREDUCERS-1
+    
 
     #Get boto3 s3 client
     s3_client = boto3.client('s3')
@@ -112,6 +130,10 @@ def handler(event, context):
         allMapped = True
         for j in range(len(filesSize),TotalNodes):
             auxName = keyPrefix + str(j)
+
+            #Add hash prefix
+            auxName = str(hashlib.md5(auxName.encode()).hexdigest()) + "/" + auxName
+            
             try:
                 response = s3_client.head_object(Bucket=BUCKETOUT, Key=auxName)
                 filesSize.append(int(response['ContentLength']))
@@ -123,14 +145,16 @@ def handler(event, context):
             break
         time.sleep( 0.5 )
 
-        
-
     #if mapping is not finished, the function
     #invoke another reduce function and termines
     if allMapped == False:
         #lunch lambda function reducer
+        if tester == True:
+            ReducerNumber = -1
+            time.sleep( 2 )
         lambda_client = boto3.client('lambda')
         payload = {}
+        payload["Invocation"] = str(Invocation+1)
         payload["ReducerNumber"] = str(ReducerNumber)
         payload["FileName"]=str(FileName)
         payload["TotalNodes"]=str(TotalNodes)
@@ -149,6 +173,24 @@ def handler(event, context):
         return
     
     #if mapping is finished, begin the reduce.
+
+    #If this reducer is the tester reduce, launch all reducer functions
+    if tester == True:
+        for i in range(NREDUCERS):
+            lambda_client = boto3.client('lambda')
+            payload = {}
+            payload["Invocation"] = '0'
+            payload["ReducerNumber"] = str(i)
+            payload["FileName"]=str(FileName)
+            payload["TotalNodes"]=str(TotalNodes)
+            response_invoke = lambda_client.invoke(
+                ClientContext='ClusterHD-'+BUCKETOUT,
+                FunctionName='HC-'+PREFIX+'-lambda-reducer',
+                InvocationType='Event',
+                LogType='Tail',
+                Payload=json.dumps(payload),
+            )
+        return
     
     #create lists to store results
     Pairs = []
@@ -209,9 +251,13 @@ def handler(event, context):
     print("Uploading data")
     resultsKey = os.path.join(PREFIX,FileName,str(ReducerNumber) + "_results")
     s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
-    
+
     #remove all partitions
     for i in range(TotalNodes):
         bucket = BUCKETOUT
         key = PREFIX + "/" + FileName + "/" + str(ReducerNumber) + "_" + str(i)
+
+        #Add hash prefix
+        key = str(hashlib.md5(key.encode()).hexdigest()) + "/" + key                
+        
         s3_client.delete_object(Bucket=BUCKETOUT, Key=key)

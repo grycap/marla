@@ -18,6 +18,7 @@ import os
 import json
 import math
 import user_functions
+import hashlib
 
 def handler(event, context):
     #extract filename and the partition number
@@ -144,6 +145,7 @@ def handler(event, context):
     Results.sort()
     
     #upload results
+
     results = ""
     ASCIIinterval = (130-32)/NREDUCERS
     ASCIIlimit = ASCIIinterval+32
@@ -167,6 +169,10 @@ def handler(event, context):
                 print("ASCII group " + str(ASCIInumInterval) + " (" + str(name) +")")
                 # Upload results
                 resultsKey = partialKey + str(ASCIInumInterval) + "_" + str(NodeNumber)
+
+                # Add a prefix with his hash to maximize
+                # S3 pefrormance.
+                resultsKey = str(hashlib.md5(resultsKey.encode()).hexdigest()) + "/" + resultsKey
                 s3_client.put_object(Body=results,Bucket=BUCKETOUT,Key=resultsKey)
                 
                 # Update ASCII interval
@@ -188,24 +194,32 @@ def handler(event, context):
         print("ASCII group " + str(i) + " (remaining)")
         # Upload results
         resultsKey = partialKey + str(i) + "_" + str(NodeNumber)
+
+        # Add a prefix with his hash to maximize
+        # S3 pefrormance.
+        resultsKey = str(hashlib.md5(resultsKey.encode()).hexdigest()) + "/" + resultsKey
+                
         s3_client.put_object(Body=results,Bucket=BUCKETOUT, Key=resultsKey)
         results = ""
                 
     #check if this is the last partition.
-    if NodeNumber == TotalNodes-1:
-        #launch lambda functions reducers
-        print("launching reducer functions")
-        for i in range(0,NREDUCERS):
-            lambda_client = boto3.client('lambda')
-            payload = {}
-            payload["ReducerNumber"] = str(i)
-            payload["FileName"]=str(FileName)
-            payload["TotalNodes"]=str(TotalNodes)
-            response_invoke = lambda_client.invoke(
-                ClientContext='ClusterHD-'+BUCKETOUT,
-                FunctionName='HC-'+PREFIX+'-lambda-reducer',
-                InvocationType='Event',
-                LogType='Tail',
-                Payload=json.dumps(payload),
-            )
+    launcher = TotalNodes-1
+    if TotalNodes > 1:
+        launcher = TotalNodes-2
+    if NodeNumber == launcher:
+        #launch first lambda functions reducer
+        print("launching tester reducer function")
+        lambda_client = boto3.client('lambda')
+        payload = {}
+        payload["Invocation"] = '0'
+        payload["ReducerNumber"] = '-1'
+        payload["FileName"]=str(FileName)
+        payload["TotalNodes"]=str(TotalNodes)
+        response_invoke = lambda_client.invoke(
+            ClientContext='ClusterHD-'+BUCKETOUT,
+            FunctionName='HC-'+PREFIX+'-lambda-reducer',
+            InvocationType='Event',
+            LogType='Tail',
+            Payload=json.dumps(payload),
+        )
         
