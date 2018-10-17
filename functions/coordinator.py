@@ -66,7 +66,7 @@ def handler(event, context):
         print("FileSize = " + str(fileSize))
 
         #Calculate the chunk size
-        chunkSize = int(fileSize/(MAPPERNUMBER-1))
+        chunkSize = int(fileSize/MAPPERNUMBER)
         numberMappers = MAPPERNUMBER
         if chunkSize < MINBLOCKSIZE:
             print("chunk size to small (" + str(chunkSize) + " bytes), changing to " + str(MINBLOCKSIZE) + " bytes")
