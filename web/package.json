@@ -10,6 +10,7 @@
   "dependencies": {
     "nmp": "^1.0.3",
     "npm": "^6.9.0",
+    "validate": "^4.5.1",
     "vue": "^2.6.6",
     "vue-router": "^3.0.1",
     "vuetify": "^1.5.5",

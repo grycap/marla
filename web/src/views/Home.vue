@@ -7,7 +7,7 @@
       </v-toolbar>
       <v-layout>
         <v-flex
-          xs12
+          xs12g
           md4
         >
           <h2 class="grey--text">Step 1. Credentials</h2>
@@ -21,7 +21,6 @@
           <v-text-field
             v-model="AK"
             :rules="nameRules"
-            :counter="10"
             label="AK"
             required
           ></v-text-field>
@@ -34,7 +33,6 @@
           <v-text-field
             v-model="SK"
             :rules="nameRules"
-            :counter="10"
             label="SK"
             required
           ></v-text-field>
@@ -59,7 +57,6 @@
           <v-text-field
             v-model="ClusterName"
             :rules="nameRules"
-            :counter="10"
             label="ClusterName"
             required
           ></v-text-field>
@@ -72,7 +69,6 @@
           <v-text-field
             v-model="FunctionsDir"
             :rules="nameRules"
-            :counter="10"
             label="FunctionsDir"
             required
           ></v-text-field>
@@ -85,7 +81,6 @@
           <v-text-field
             v-model="FunctionsFile"
             :rules="nameRules"
-            :counter="10"
             label="FunctionsFile"
             required
           ></v-text-field>
@@ -97,13 +92,13 @@
           xs12
           md4
         >
-          <v-text-field
-            v-model="Region"
+          <v-select
+            v-model="select"
+            :items="itemsRegion"
             :rules="nameRules"
-            :counter="10"
             label="Region"
             required
-          ></v-text-field>
+          ></v-select>
         </v-flex>
 
         <v-flex
@@ -113,7 +108,6 @@
           <v-text-field
             v-model="BucketIn"
             :rules="nameRules"
-            :counter="10"
             label="BucketIn"
             required
           ></v-text-field>
@@ -126,7 +120,6 @@
           <v-text-field
             v-model="BucketOut"
             :rules="nameRules"
-            :counter="10"
             label="BucketOut"
             required
           ></v-text-field>
@@ -141,7 +134,6 @@
           <v-text-field
             v-model="RoleARN"
             :rules="nameRules"
-            :counter="10"
             label="RoleARN"
             required
           ></v-text-field>
@@ -152,9 +144,8 @@
           md4
         >
           <v-text-field
-            v-model="MinBlockSize"
+            v-model="modelMinBlockSize"
             :rules="nameRules"
-            :counter="10"
             label="MinBlockSize"
             required
           ></v-text-field>
@@ -165,9 +156,8 @@
           md4
         >
           <v-text-field
-            v-model="MaxBlockSize"
+            v-model="modelMaxBlockSize"
             :rules="nameRules"
-            :counter="10"
             label="MaxBlockSize"
             required
           ></v-text-field>
@@ -182,7 +172,6 @@
           <v-text-field
             v-model="KMSKeyARN"
             :rules="nameRules"
-            :counter="10"
             label="KMSKeyARN"
             required
           ></v-text-field>
@@ -193,9 +182,8 @@
           md4
         >
           <v-text-field
-            v-model="MapperMemory"
+            v-model="modelMapperMemory"
             :rules="nameRules"
-            :counter="10"
             label="MapperMemory"
             required
           ></v-text-field>
@@ -206,9 +194,8 @@
           md4
         >
           <v-text-field
-            v-model="ReducerMemory"
+            v-model="modelReducerMemory"
             :rules="nameRules"
-            :counter="10"
             label="ReducerMemory"
             required
           ></v-text-field>
@@ -222,9 +209,8 @@
           md4
         >
           <v-text-field
-            v-model="TimeOut"
+            v-model="modelTimeOut"
             :rules="nameRules"
-            :counter="10"
             label="TimeOut"
             required
           ></v-text-field>
@@ -235,9 +221,8 @@
           md4
         >
           <v-text-field
-            v-model="ReducersNumber"
+            v-model="modelReducersNumber"
             :rules="nameRules"
-            :counter="10"
             label="ReducersNumber"
             required
           ></v-text-field>
@@ -302,23 +287,39 @@
     data: () => ({
       valid: true,
       name: '',
+      modelMaxBlockSize:'0',
+      modelMinBlockSize:'1024',
+      modelMapperMemory:'1536',
+      modelReducerMemory:'1536',
+      modelTimeOut:'180',
+      modelReducersNumber:'10',
+
+
       nameRules: [
-        v => !!v || 'Name is required',
-        v => (v && v.length <= 10) || 'Name must be less than 10 characters'
-      ],
-      email: '',
-      emailRules: [
-        v => !!v || 'E-mail is required',
-        v => /.+@.+/.test(v) || 'E-mail must be valid'
+        v => !!v || 'Required data',
+        //v => (v && v.length <= 10) || 'Name must be less than 10 characters'
       ],
       select: null,
-      items: [
-        'Item 1',
-        'Item 2',
-        'Item 3',
-        'Item 4'
-      ],
-      checkbox: false
+      itemsRegion: [
+      'us-east-1',
+      'us-east-2',
+      'us-west-1',
+      'us-west-2',
+      'ca-central-1',
+      'eu-central-1',
+      'eu-west-1',
+      'eu-west-2',
+      'eu-west-3',
+      'eu-north-1',
+      'ap-northeast-1',
+      'ap-northeast-2',
+      'ap-northeast-3',
+      'ap-southeast-1',
+      'ap-southeast-2',
+      'ap-south-1',
+      'sa-east-1'
+    ],
+
     }),
 
     methods: {
