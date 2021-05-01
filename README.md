@@ -2,6 +2,9 @@
 
 MARLA is a tool to create and configure a serverless MapReduce processor on AWS by means of a set of Lambda functions created on AWS Lambda. Files are uploaded to Amazon S3 and this triggers the execution of the functions using the user-supplied Mapper and Reduce functions.
 
+# Architecture
+![Alt text](docs/images/marla-arch.png?raw=true "Architecture")
+
 # Installation
 
 MARLA requires:
@@ -100,3 +103,10 @@ To remove a "Lambda cluster", use the script "marla_remove.sh" with the name of 
 `$ sh marla_remove.sh ClusterName`
 
 This will remove all the created Lambda functions, but not the files in S3.
+
+## Acknowledgement 
+Please acknowledge the use of MARLA by citing the following publication:
+```
+Giménez-Alventosa, V., Moltó, G., Caballer, M., 2019. A framework and a performance assessment for serverless MapReduce on AWS Lambda. Futur. Gener. Comput. Syst. 97, 259–274. https://doi.org/10.1016/j.future.2019.02.057
+```
+
